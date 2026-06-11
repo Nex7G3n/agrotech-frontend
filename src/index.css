@@ -1,3 +1,67 @@
+@import "tailwindcss";
+
+@theme {
+  /* AgroPredict design tokens (from prototipo) */
+  --color-ag-green-50: #E1F5EE;
+  --color-ag-green-100: #9FE1CB;
+  --color-ag-green-200: #5DCAA5;
+  --color-ag-green-400: #1D9E75;
+  --color-ag-green-600: #0F6E56;
+  --color-ag-green-800: #085041;
+  --color-ag-green-900: #04342C;
+
+  --color-ag-amber-50: #FAEEDA;
+  --color-ag-amber-100: #FAC775;
+  --color-ag-amber-200: #EF9F27;
+  --color-ag-amber-400: #BA7517;
+  --color-ag-amber-600: #854F0B;
+
+  --color-ag-red-50: #FCEBEB;
+  --color-ag-red-100: #F7C1C1;
+  --color-ag-red-200: #F09595;
+  --color-ag-red-400: #E24B4A;
+  --color-ag-red-600: #A32D2D;
+
+  --color-ag-blue-50: #E6F1FB;
+  --color-ag-blue-200: #85B7EB;
+  --color-ag-blue-400: #378ADD;
+  --color-ag-blue-600: #185FA5;
+
+  --color-ag-gray-50: #F5F4F0;
+  --color-ag-gray-100: #E8E6DF;
+  --color-ag-gray-200: #CCCAC0;
+  --color-ag-gray-400: #9A9890;
+  --color-ag-gray-600: #5C5A54;
+  --color-ag-gray-800: #2E2D29;
+  --color-ag-gray-900: #1A1917;
+
+  /* shadcn-style semantic tokens mapped to the AgroPredict palette */
+  --color-background: #F8F7F3;
+  --color-foreground: #1A1917;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #1A1917;
+  --color-primary: #1D9E75;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #F2F0EA;
+  --color-secondary-foreground: #1A1917;
+  --color-muted: #F2F0EA;
+  --color-muted-foreground: #9A9890;
+  --color-accent: #E1F5EE;
+  --color-accent-foreground: #0F6E56;
+  --color-destructive: #E24B4A;
+  --color-destructive-foreground: #FFFFFF;
+  --color-border: rgba(0,0,0,0.09);
+  --color-input: rgba(0,0,0,0.15);
+  --color-ring: #1D9E75;
+
+  --radius: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --font-sans: 'DM Sans', sans-serif;
+  --font-mono: 'DM Mono', monospace;
+}
+
 * {
   box-sizing: border-box;
 }

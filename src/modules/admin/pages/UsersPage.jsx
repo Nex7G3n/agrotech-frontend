@@ -1,9 +1,11 @@
+import { PagePlaceholder } from '@/shared/components/PagePlaceholder'
+
 export function UsersPage() {
   return (
-    <section className="panel-card">
-      <p className="eyebrow">Admin</p>
-      <h2>Gestión de usuarios</h2>
-      <p className="muted">Vista protegida por rol admin.</p>
-    </section>
+    <PagePlaceholder
+      id="F-02"
+      title="Gestión de usuarios"
+      description="Permite crear, listar y editar usuarios del sistema"
+    />
   )
 }
