@@ -2,8 +2,17 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
+<<<<<<< HEAD
       "@/*": ["./src/*"]
     }
   },
   "include": ["src"]
 }
+=======
+      "@/*": [
+        "src/*"
+      ]
+    }
+  }
+}
+>>>>>>> 45c7c87bb42c921bcc3c05618a34551abd147bb0
