@@ -338,6 +338,15 @@ function ControlPanel({
         </div>
 
         <div className="grid gap-3 md:grid-cols-3">
+          <Field label="Destino">
+            <Select value={form.destination} onChange={(event) => onDestinationChange(event.target.value)}>
+              {inputOptions.destinations.map((destination) => (
+                <option key={destination} value={destination}>
+                  {destination}
+                </option>
+              ))}
+            </Select>
+          </Field>
           <Field label="FOB actual">
             <div className="relative">
               <Input
@@ -359,15 +368,7 @@ function ControlPanel({
           <Field label="Operaciones">
             <Input type="number" min={operationsRange.min} max={operationsRange.max} value={form.operations} onChange={(event) => updateField('operations', Number(event.target.value))} />
           </Field>
-          <Field label="Destino">
-            <Select value={form.destination} onChange={(event) => onDestinationChange(event.target.value)}>
-              {inputOptions.destinations.map((destination) => (
-                <option key={destination} value={destination}>
-                  {destination}
-                </option>
-              ))}
-            </Select>
-          </Field>
+
           <Field label="Temporada">
             <Select value={form.season} onChange={(event) => updateField('season', event.target.value)}>
               {inputOptions.seasons.map((season) => (
