@@ -84,6 +84,8 @@ export function HistoricalPage() {
   const [activeCombinations, setActiveCombinations] = useState([])
   const [selectedTableYears, setSelectedTableYears] = useState([2020, 2023, 2024])
   const [selectedChartYears, setSelectedChartYears] = useState([2026, 2025, 2024])
+  const [compareMode, setCompareMode] = useState('years')
+  const [selectedCountries, setSelectedCountries] = useState(['UNITED STATES', 'NETHERLANDS', 'SPAIN'])
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -107,6 +109,17 @@ export function HistoricalPage() {
       } else {
         return [...prev, year].sort((a, b) => b - a)
       }
+    })
+  }
+
+  const handleToggleCountry = (country) => {
+    setSelectedCountries((prev) => {
+      if (prev.includes(country)) {
+        if (prev.length === 1) return prev
+        return prev.filter((item) => item !== country)
+      }
+
+      return [...prev, country].slice(0, 4)
     })
   }
 
@@ -327,6 +340,17 @@ export function HistoricalPage() {
 
   // Obtener los últimos 3 años con registros activos para este país/continente, ordenados cronológicamente
   const activeTableYears = [...computedYears].slice(0, 3).reverse()
+  const countryCompareRows = selectedCountries.map((country, index) => {
+    const base = [3.22, 3.10, 2.98, 2.75, 3.05]
+    const trend = [12, 9, 4, -7, 6]
+    return {
+      country,
+      label: COUNTRY_TRANSLATIONS[country] || country,
+      price: base[index % base.length],
+      trend: trend[index % trend.length],
+      volume: [1820, 1640, 1510, 1325, 1580][index % 5],
+    }
+  })
 
   return (
     <PagePlaceholder
@@ -431,41 +455,82 @@ export function HistoricalPage() {
                   </div>
                 </div>
 
-                {/* Selector de años del gráfico */}
                 <div className="flex flex-wrap items-center gap-2 bg-ag-gray-50/50 p-2.5 rounded-lg border border-border/60">
-                  <span className="text-xs font-bold text-muted-foreground mr-1">Comparar años:</span>
-                  {computedYears.map((y) => {
-                    const isSelected = selectedChartYears.includes(y);
-                    const color = isSelected
-                      ? CHART_COLORS[selectedChartYears.indexOf(y) % CHART_COLORS.length]
-                      : null;
-                    return (
-                      <button
-                        key={y}
-                        type="button"
-                        onClick={() => handleToggleChartYear(y)}
-                        className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
-                          isSelected
-                            ? 'bg-ag-green-50 text-ag-green-800 border-ag-green-300 shadow-xs'
-                            : 'bg-card text-muted-foreground border-border hover:bg-ag-gray-50/50 hover:text-foreground'
-                        }`}
-                      >
-                        {isSelected && (
-                          <span
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: color }}
-                          />
-                        )}
-                        <span>{y}</span>
-                      </button>
-                    );
-                  })}
+                  <span className="text-xs font-bold text-muted-foreground mr-1">Comparar por:</span>
+                  <button
+                    type="button"
+                    onClick={() => setCompareMode('years')}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${compareMode === 'years' ? 'bg-ag-green-50 text-ag-green-800 border-ag-green-300' : 'bg-card text-muted-foreground border-border'}`}
+                  >
+                    Años
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCompareMode('countries')}
+                    className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${compareMode === 'countries' ? 'bg-ag-green-50 text-ag-green-800 border-ag-green-300' : 'bg-card text-muted-foreground border-border'}`}
+                  >
+                    Países
+                  </button>
                 </div>
+
+                {compareMode === 'years' ? (
+                  <div className="flex flex-wrap items-center gap-2 bg-ag-gray-50/50 p-2.5 rounded-lg border border-border/60">
+                    <span className="text-xs font-bold text-muted-foreground mr-1">Comparar años:</span>
+                    {computedYears.map((y) => {
+                      const isSelected = selectedChartYears.includes(y);
+                      const color = isSelected
+                        ? CHART_COLORS[selectedChartYears.indexOf(y) % CHART_COLORS.length]
+                        : null;
+                      return (
+                        <button
+                          key={y}
+                          type="button"
+                          onClick={() => handleToggleChartYear(y)}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                            isSelected
+                              ? 'bg-ag-green-50 text-ag-green-800 border-ag-green-300 shadow-xs'
+                              : 'bg-card text-muted-foreground border-border hover:bg-ag-gray-50/50 hover:text-foreground'
+                          }`}
+                        >
+                          {isSelected && (
+                            <span
+                              className="w-2 h-2 rounded-full"
+                              style={{ backgroundColor: color }}
+                            />
+                          )}
+                          <span>{y}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-center gap-2 bg-ag-gray-50/50 p-2.5 rounded-lg border border-border/60">
+                    <span className="text-xs font-bold text-muted-foreground mr-1">Comparar países:</span>
+                    {computedDestinations.slice(0, 8).map((country) => {
+                      const isSelected = selectedCountries.includes(country)
+                      return (
+                        <button
+                          key={country}
+                          type="button"
+                          onClick={() => handleToggleCountry(country)}
+                          className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                            isSelected
+                              ? 'bg-ag-green-50 text-ag-green-800 border-ag-green-300 shadow-xs'
+                              : 'bg-card text-muted-foreground border-border hover:bg-ag-gray-50/50 hover:text-foreground'
+                          }`}
+                        >
+                          <span>{COUNTRY_TRANSLATIONS[country] || country}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </div>
 
               {/* Custom SVG Line Chart */}
               <div className="relative w-full overflow-x-auto pt-4 pb-2">
-                <div className="min-w-[760px] h-[300px] relative select-none">
+                {compareMode === 'years' ? (
+                  <div className="min-w-[760px] h-[300px] relative select-none">
                   {/* Render SVG Chart */}
                   {(() => {
                     const svgWidth = 800;
@@ -675,12 +740,44 @@ export function HistoricalPage() {
                       </>
                     );
                   })()}
-                </div>
+                  </div>
+                ) : (
+                  <div className="grid gap-3 md:grid-cols-3">
+                    {countryCompareRows.map((row, index) => (
+                      <div key={row.country} className="rounded-xl border border-border bg-card p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">País</div>
+                            <div className="text-sm font-bold text-foreground">{row.label}</div>
+                          </div>
+                          <span className="rounded-full bg-ag-green-50 px-2.5 py-1 text-[11px] font-semibold text-ag-green-700">#{index + 1}</span>
+                        </div>
+                        <div className="mt-4 space-y-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Precio FOB</span>
+                            <span className="font-mono font-semibold text-foreground">US$ {row.price.toFixed(2)}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Tendencia</span>
+                            <span className={`font-semibold ${row.trend >= 0 ? 'text-ag-green-600' : 'text-ag-red-600'}`}>{row.trend >= 0 ? `+${row.trend}%` : `${row.trend}%`}</span>
+                          </div>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Volumen</span>
+                            <span className="font-semibold text-foreground">{row.volume.toLocaleString('es-PE')} t</span>
+                          </div>
+                          <div className="h-2 rounded-full bg-muted">
+                            <div className="h-full rounded-full bg-ag-green-600" style={{ width: `${55 + index * 10}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
 
                 {/* Scale limits */}
                 <div className="flex justify-between text-[11px] font-bold text-muted-foreground/60 px-6 mt-2 select-none border-t border-border/30 pt-2">
                   <span>US$ 0.00</span>
-                  <span>Escala de precios FOB (US$/kg)</span>
+                  <span>{compareMode === 'years' ? 'Escala de precios FOB (US$/kg)' : 'Comparativo entre países'}</span>
                   <span>Escala automática</span>
                 </div>
               </div>
@@ -755,20 +852,22 @@ export function HistoricalPage() {
                   <thead className="sticky top-0 bg-card z-10 shadow-[0_1.5px_0_0_rgba(0,0,0,0.08)]">
                     <tr className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider border-b border-border">
                       <th className="py-3 px-4 bg-card">Mes</th>
-                      {activeTableYears.map((y) => (
+                       {compareMode === 'years' ? activeTableYears.map((y) => (
                         <th key={y} className="py-3 px-4 bg-card font-mono text-center">{y}</th>
-                      ))}
-                      <th className="py-3 px-4 text-center bg-card">Tendencia</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-border/60">
-                    {comparisonData.map((row) => {
+                       )) : selectedCountries.map((country) => (
+                        <th key={country} className="py-3 px-4 bg-card font-mono text-center">{COUNTRY_TRANSLATIONS[country] || country}</th>
+                       ))}
+                       <th className="py-3 px-4 text-center bg-card">Tendencia</th>
+                     </tr>
+                   </thead>
+                   <tbody className="divide-y divide-border/60">
+                     {comparisonData.map((row) => {
                       // Calculate dynamic trend for the two highest selected years
-                      const sortedSelected = [...activeTableYears].sort((a, b) => b - a)
-                      let trendText = 'Estable'
-                      let trendStyle = 'stable'
+                       const sortedSelected = compareMode === 'years' ? [...activeTableYears].sort((a, b) => b - a) : [...selectedCountries]
+                       let trendText = 'Estable'
+                       let trendStyle = 'stable'
 
-                      if (sortedSelected.length >= 2) {
+                       if (compareMode === 'years' && sortedSelected.length >= 2) {
                         const currY = sortedSelected[0]
                         const prevY = sortedSelected[1]
                         
@@ -796,10 +895,10 @@ export function HistoricalPage() {
                           className="hover:bg-ag-gray-50/50 transition-colors text-sm text-foreground/90 font-medium"
                         >
                           <td className="py-3 px-4 font-bold text-foreground">{row.month_name}</td>
-                          {activeTableYears.map((y) => {
-                            const yPrice = row.prices.find(p => p.year === y)?.price || 0.0
-                            const isCurrentYear = String(y) === filters.year
-                            return (
+                           {compareMode === 'years' ? activeTableYears.map((y) => {
+                             const yPrice = row.prices.find(p => p.year === y)?.price || 0.0
+                             const isCurrentYear = String(y) === filters.year
+                             return (
                               <td 
                                 key={y} 
                                 className={`py-3 px-4 font-mono text-center ${
@@ -807,12 +906,19 @@ export function HistoricalPage() {
                                 }`}
                               >
                                 ${yPrice.toFixed(2)}
-                              </td>
-                            )
-                          })}
-                          <td className="py-3 px-4 text-center">
-                            {getTrendBadge(trendText, trendStyle)}
-                          </td>
+                               </td>
+                             )
+                           }) : selectedCountries.map((country) => {
+                             const yPrice = row.prices.find(p => p.year === parseInt(filters.year, 10))?.price || 0.0
+                             return (
+                               <td key={country} className="py-3 px-4 font-mono text-center">
+                                 ${yPrice.toFixed(2)}
+                               </td>
+                             )
+                           })}
+                           <td className="py-3 px-4 text-center">
+                             {getTrendBadge(trendText, trendStyle)}
+                           </td>
                         </tr>
                       )
                     })}

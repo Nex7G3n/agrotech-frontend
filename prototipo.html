@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgroPredict — Sistema Predictivo de Precios de Palta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --green-50: #E1F5EE;
+    --green-100: #9FE1CB;
+    --green-200: #5DCAA5;
+    --green-400: #1D9E75;
+    --green-600: #0F6E56;
+    --green-800: #085041;
+    --green-900: #04342C;
+
+    --amber-50: #FAEEDA;
+    --amber-100: #FAC775;
+    --amber-200: #EF9F27;
+    --amber-400: #BA7517;
+    --amber-600: #854F0B;
+
+    --red-50: #FCEBEB;
+    --red-100: #F7C1C1;
+    --red-200: #F09595;
+    --red-400: #E24B4A;
+    --red-600: #A32D2D;
+
+    --blue-50: #E6F1FB;
+    --blue-200: #85B7EB;
+    --blue-400: #378ADD;
+    --blue-600: #185FA5;
+
+    --gray-50: #F5F4F0;
+    --gray-100: #E8E6DF;
+    --gray-200: #CCCAC0;
+    --gray-400: #9A9890;
+    --gray-600: #5C5A54;
+    --gray-800: #2E2D29;
+    --gray-900: #1A1917;
+
+    --bg: #F8F7F3;
+    --surface: #FFFFFF;
+    --surface-2: #F2F0EA;
+    --border: rgba(0,0,0,0.09);
+    --border-strong: rgba(0,0,0,0.15);
+    --text-primary: #1A1917;
+    --text-secondary: #5C5A54;
+    --text-muted: #9A9890;
+    --accent: #1D9E75;
+    --accent-dark: #085041;
+    --radius: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+    --shadow-lg: 0 2px 8px rgba(0,0,0,0.08), 0 12px 40px rgba(0,0,0,0.08);
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  .top-bar {
+    background: var(--accent-dark);
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 2px 20px rgba(4,52,44,0.3);
+  }
+  .logo-wrap { display: flex; align-items: center; gap: 10px; }
+  .logo-icon {
+    width: 34px; height: 34px;
+    background: var(--green-400);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+  .logo-text { font-size: 16px; font-weight: 600; color: white; letter-spacing: -0.3px; }
+  .logo-sub { font-size: 11px; color: var(--green-100); margin-top: -1px; }
+
+  .nav-pills { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; justify-content: center; }
+  .nav-pill {
+    padding: 5px 13px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--green-100);
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.15);
+    cursor: pointer;
+    transition: all .18s ease;
+    white-space: nowrap;
+  }
+  .nav-pill:hover { background: rgba(255,255,255,0.1); color: white; }
+  .nav-pill.active {
+    background: var(--green-400);
+    color: white;
+    border-color: var(--green-400);
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.3);
+  }
+
+  .user-chip {
+    display: flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 20px;
+    padding: 4px 12px 4px 4px;
+    cursor: pointer;
+  }
+  .user-avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--green-200);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 600; color: var(--green-800);
+  }
+  .user-name { font-size: 12px; color: white; }
+
+  /* ── SCREEN LABEL ── */
+  .screen-label-bar {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 24px;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .screen-id {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px; font-weight: 500;
+    background: var(--green-50);
+    color: var(--green-600);
+    padding: 3px 9px; border-radius: 6px;
+    border: 1px solid var(--green-100);
+  }
+  .screen-title { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+  .screen-desc { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+
+  /* ── MAIN LAYOUT ── */
+  main { flex: 1; padding: 24px; max-width: 1100px; margin: 0 auto; width: 100%; }
+
+  .page { display: none; animation: fadeIn .22s ease; }
+  .page.active { display: block; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 18px 20px;
+    box-shadow: var(--shadow);
+  }
+  .card-dark {
+    background: var(--accent-dark);
+    border-color: var(--green-600);
+  }
+  .metric-card {
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+  }
+  .metric-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; text-transform: uppercase; letter-spacing: 0.04em; font-weight: 500; }
+  .metric-value { font-size: 26px; font-weight: 600; color: var(--text-primary); line-height: 1; }
+  .metric-sub { font-size: 11px; color: var(--text-muted); margin-top: 3px; }
+
+  /* ── GRIDS ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .gap-12 { display: flex; flex-direction: column; gap: 12px; }
+  .gap-16 { display: flex; flex-direction: column; gap: 16px; }
+  .gap-8 { display: flex; flex-direction: column; gap: 8px; }
+  .row { display: flex; align-items: center; gap: 10px; }
+  .spacer { flex: 1; }
+
+  /* ── BADGES ── */
+  .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 9px; border-radius: 20px;
+    font-size: 11px; font-weight: 500; white-space: nowrap;
+  }
+  .badge-green { background: var(--green-50); color: var(--green-600); border: 1px solid var(--green-100); }
+  .badge-amber { background: var(--amber-50); color: var(--amber-600); border: 1px solid var(--amber-100); }
+  .badge-red { background: var(--red-50); color: var(--red-600); border: 1px solid var(--red-100); }
+  .badge-blue { background: var(--blue-50); color: var(--blue-600); border: 1px solid var(--blue-200); }
+  .badge-gray { background: var(--gray-50); color: var(--gray-600); border: 1px solid var(--gray-100); }
+  .badge-white { background: rgba(255,255,255,0.15); color: white; border: 1px solid rgba(255,255,255,0.2); }
+
+  /* ── FORM ELEMENTS ── */
+  .field-group { display: flex; flex-direction: column; gap: 5px; }
+  .field-label { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+  .field-input, .field-select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text-primary);
+    background: var(--surface-2);
+    transition: border-color .15s, box-shadow .15s;
+    outline: none;
+  }
+  .field-input:focus, .field-select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(29,158,117,0.12);
+    background: var(--surface);
+  }
+  .field-input.placeholder { color: var(--text-muted); }
+
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    padding: 9px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background .15s, transform .1s;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary:hover { background: var(--green-600); }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary.full { width: 100%; justify-content: center; }
+
+  .btn-secondary {
+    background: var(--surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--radius);
+    padding: 8px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background .15s;
+    display: inline-flex; align-items: center; gap: 5px;
+  }
+  .btn-secondary:hover { background: var(--surface-2); }
+
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+  .section-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 12px; }
+
+  /* ── TABLE ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-size: 11px; font-weight: 600; color: var(--text-muted); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 10px 10px; border-bottom: 1px solid var(--border); color: var(--text-primary); }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface-2); }
+  .table-wrap { border: 1px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; background: var(--surface); box-shadow: var(--shadow); }
+
+  /* ── LIST ROWS ── */
+  .list-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .list-row:last-child { border-bottom: none; }
+
+  .avatar {
+    width: 36px; height: 36px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 600; flex-shrink: 0;
+  }
+
+  /* ── PROGRESS ── */
+  .progress-bar { height: 5px; background: var(--gray-100); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width .4s ease; }
+
+  /* ── SCENARIOS ── */
+  .scenario-card {
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    display: flex; align-items: center; gap: 14px;
+    border: 1px solid transparent;
+  }
+  .scenario-icon {
+    width: 40px; height: 40px; border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+
+  /* ── ALERT ITEMS ── */
+  .alert-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 14px 16px;
+    display: flex; gap: 12px;
+    box-shadow: var(--shadow);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .alert-item:hover { transform: translateY(-1px); box-shadow: var(--shadow-lg); }
+  .alert-icon-wrap {
+    width: 38px; height: 38px; border-radius: var(--radius);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; flex-shrink: 0;
+  }
+
+  /* ── BAR CHART ── */
+  .bar-chart { display: flex; align-items: flex-end; gap: 4px; height: 100px; padding: 0 2px; }
+  .bar-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; min-width: 0; }
+  .bar-fill { width: 100%; border-radius: 4px 4px 0 0; transition: height .3s ease; }
+  .bar-label { font-size: 10px; color: var(--text-muted); }
+
+  /* ── FOB CHART ── */
+  .fob-chart { display: flex; align-items: flex-end; gap: 3px; height: 70px; }
+  .fob-col { flex: 1; border-radius: 3px 3px 0 0; }
+  .fob-col.hist { background: var(--green-100); }
+  .fob-col.pred { background: var(--green-200); opacity: 0.7; border: 1px dashed var(--accent); }
+
+  /* ── RECOMMENDATION BOX ── */
+  .rec-hero {
+    background: linear-gradient(135deg, var(--green-800) 0%, var(--accent) 100%);
+    border-radius: var(--radius-xl);
+    padding: 28px 24px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(29,158,117,0.3);
+  }
+  .rec-hero::before {
+    content: '';
+    position: absolute; top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 50%;
+  }
+  .rec-hero::after {
+    content: '';
+    position: absolute; bottom: -20px; left: 20px;
+    width: 80px; height: 80px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+  .rec-badge-big {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 30px;
+    padding: 6px 20px;
+    font-size: 22px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .rec-sub { font-size: 13px; color: rgba(255,255,255,0.75); }
+
+  /* ── LOGIN PAGE ── */
+  .login-wrap { max-width: 420px; margin: 0 auto; padding-top: 20px; }
+  .login-hero {
+    background: linear-gradient(135deg, var(--green-800), var(--accent));
+    border-radius: var(--radius-xl);
+    padding: 32px 24px;
+    text-align: center;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 24px rgba(29,158,117,0.25);
+  }
+  .login-logo {
+    width: 60px; height: 60px; background: white;
+    border-radius: 16px; margin: 0 auto 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px;
+  }
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-top: 10px; }
+  .role-card {
+    border: 1.5px solid var(--border-strong);
+    border-radius: var(--radius-lg);
+    padding: 14px 10px;
+    text-align: center; cursor: pointer;
+    transition: all .18s;
+    background: var(--surface);
+  }
+  .role-card:hover { border-color: var(--green-200); background: var(--green-50); }
+  .role-card.selected { border-color: var(--accent); background: var(--green-50); box-shadow: 0 0 0 3px rgba(29,158,117,0.15); }
+  .role-card .role-emoji { font-size: 24px; margin-bottom: 6px; }
+  .role-card .role-name { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+
+  /* ── CYCLE PATTERN ── */
+  .pattern-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 14px;
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+  }
+  .pattern-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── NOTIFICATION ── */
+  .notif-config-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .notif-config-row:last-child { border-bottom: none; }
+  .toggle {
+    width: 38px; height: 22px;
+    background: var(--accent);
+    border-radius: 11px;
+    position: relative; cursor: pointer; flex-shrink: 0;
+    border: none; padding: 0;
+  }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px; right: 3px;
+    width: 16px; height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: right .2s;
+  }
+  .toggle.off { background: var(--gray-200); }
+  .toggle.off::after { right: 19px; }
+
+  /* ── TABS FILTER ── */
+  .filter-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filter-tab {
+    padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 500;
+    border: 1px solid var(--border-strong); background: var(--surface);
+    color: var(--text-secondary); cursor: pointer; transition: all .15s;
+  }
+  .filter-tab:hover { background: var(--surface-2); }
+  .filter-tab.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 720px) {
+    .nav-pills { gap: 4px; }
+    .nav-pill { font-size: 10px; padding: 4px 9px; }
+    .grid-3, .grid-4 { grid-template-columns: 1fr 1fr; }
+    main { padding: 16px; }
+    .user-name { display: none; }
+  }
+  @media (max-width: 480px) {
+    .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    .top-bar { padding: 10px 14px; flex-wrap: wrap; }
+    .nav-pills { order: 3; width: 100%; justify-content: flex-start; }
+  }
+
+  /* ── ICONS (SVG inline simples) ── */
+  .icon { width: 18px; height: 18px; display: inline-block; vertical-align: middle; }
+  .dot-online { width: 8px; height: 8px; background: var(--green-400); border-radius: 50%; display: inline-block; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<header class="top-bar">
+  <div class="logo-wrap">
+    <div class="logo-icon">🌿</div>
+    <div>
+      <div class="logo-text">AgroPredict</div>
+      <div class="logo-sub">La Libertad, Perú</div>
+    </div>
+  </div>
+
+  <nav class="nav-pills">
+    <button class="nav-pill active" onclick="showPage(0)">F-01 Sesión</button>
+    <button class="nav-pill" onclick="showPage(1)">F-02 Usuarios</button>
+    <button class="nav-pill" onclick="showPage(2)">F-03 Predicción</button>
+    <button class="nav-pill" onclick="showPage(3)">F-04 Histórico</button>
+    <button class="nav-pill" onclick="showPage(4)">F-05 Simulador</button>
+    <button class="nav-pill" onclick="showPage(5)">F-06 Recomendación</button>
+    <button class="nav-pill" onclick="showPage(6)">F-07 Reportes</button>
+    <button class="nav-pill" onclick="showPage(7)">F-08 Alertas</button>
+  </nav>
+
+  <div class="user-chip">
+    <div class="user-avatar">JS</div>
+    <span class="user-name">Jorge S.</span>
+  </div>
+</header>
+
+<!-- SCREEN LABEL BAR -->
+<div class="screen-label-bar">
+  <span class="screen-id" id="screen-id-badge">F-01</span>
+  <span class="screen-title" id="screen-title-text">Inicio de sesión</span>
+  <span class="screen-desc" id="screen-desc-text">Autentica al usuario con credenciales y habilita acceso según rol</span>
+</div>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════════════
+     F-01: INICIO DE SESIÓN
+══════════════════════════════════════════════════════════ -->
+<section class="page active" id="page-0">
+  <div class="login-wrap">
+    <div class="login-hero">
+      <div class="login-logo">🌿</div>
+      <h1 style="font-size:22px; font-weight:700; color:white; margin-bottom:6px;">AgroPredict</h1>
+      <p style="font-size:13px; color:rgba(255,255,255,0.75);">Sistema predictivo de precios FOB de palta Hass<br>Productores agrícolas · La Libertad, Perú</p>
+    </div>
+
+    <div class="card gap-12">
+      <div class="section-title" style="margin-bottom:0;">Iniciar sesión</div>
+
+      <div class="field-group">
+        <label class="field-label">📧 Correo electrónico</label>
+        <input class="field-input" type="email" placeholder="productor@ejemplo.pe" value="jorge.sanchez@agropredict.pe">
+      </div>
+      <div class="field-group">
+        <label class="field-label">🔒 Contraseña</label>
+        <input class="field-input" type="password" placeholder="••••••••" value="••••••••">
+      </div>
+
+      <div style="display:flex; align-items:center; justify-content:space-between; font-size:12px;">
+        <label style="display:flex; align-items:center; gap:6px; cursor:pointer; color:var(--text-secondary);">
+          <input type="checkbox" checked style="accent-color:var(--accent);"> Mantener sesión
+        </label>
+        <a href="#" style="color:var(--accent); text-decoration:none;">¿Olvidaste tu contraseña?</a>
+      </div>
+
+      <button class="btn-primary full" onclick="showPage(2)">🔑 Ingresar al sistema</button>
+
+      <div class="divider"></div>
+
+      <p class="section-title" style="font-size:12px; margin-bottom:0;">Selecciona tu rol de acceso</p>
+      <div class="role-grid">
+        <div class="role-card selected" onclick="selectRole(this)">
+          <div class="role-emoji">🌾</div>
+          <div class="role-name">Productor</div>
+        </div>
+        <div class="role-card" onclick="selectRole(this)">
+          <div class="role-emoji">👨‍💼</div>
+          <div class="role-name">Asesor</div>
+        </div>
+        <div class="role-card" onclick="selectRole(this)">
+          <div class="role-emoji">⚙️</div>
+          <div class="role-name">Administrador</div>
+        </div>
+      </div>
+
+      <div style="background:var(--green-50); border:1px solid var(--green-100); border-radius:var(--radius); padding:10px 14px; display:flex; gap:8px; align-items:flex-start;">
+        <span style="font-size:16px;">🛡️</span>
+        <p style="font-size:11px; color:var(--green-600); line-height:1.5;">Acceso seguro con autenticación por rol. Cada perfil tiene permisos diferenciados según sus responsabilidades en el sistema.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     F-02: GESTIÓN DE USUARIOS
+══════════════════════════════════════════════════════════ -->
+<section class="page" id="page-1">
+  <div class="gap-16">
+
+    <div class="grid-4">
+      <div class="metric-card">
+        <div class="metric-label">Total usuarios</div>
+        <div class="metric-value" style="color:var(--accent);">63</div>
+        <div class="metric-sub">Registrados</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Productores</div>
+        <div class="metric-value">48</div>
+        <div class="metric-sub">76% del total</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Asesores</div>
+        <div class="metric-value">12</div>
+        <div class="metric-sub">Técnicos</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Administradores</div>
+        <div class="metric-value">3</div>
+        <div class="metric-sub">Activos</div>
+      </div>
+    </div>
+
+    <div class="row" style="gap:10px;">
+      <input class="field-input" type="text" placeholder="🔍 Buscar por nombre, correo o rol..." style="flex:1;">
+      <div class="filter-tabs" style="margin:0; flex-wrap:nowrap;">
+        <button class="filter-tab active">Todos</button>
+        <button class="filter-tab">Productores</button>
+        <button class="filter-tab">Asesores</button>
+        <button class="filter-tab">Admins</button>
+      </div>
+      <button class="btn-primary">+ Nuevo usuario</button>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Usuario</th>
+            <th>Correo</th>
+            <th>Rol</th>
+            <th>Estado</th>
+            <th>Último acceso</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="row" style="gap:10px;">
+                <div class="avatar" style="background:#E1F5EE; color:#0F6E56; font-size:12px;">JS</div>
+                <div><div style="font-weight:500;">Jorge Sánchez</div><div style="font-size:11px; color:var(--text-muted);">Trujillo, La Libertad</div></div>
+              </div>
+            </td>
+            <td style="color:var(--text-secondary); font-size:12px;">jorge.s@agropredict.pe</td>
+            <td><span class="badge badge-green">🌾 Productor</span></td>
+            <td><span class="badge" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0;"><span class="dot-online" style="width:6px;height:6px;margin-right:4px;"></span>Activo</span></td>
+            <td style="font-size:12px; color:var(--text-muted);">Hoy, 09:34</td>
+            <td>
+              <div class="row" style="gap:6px;">
+                <button class="btn-secondary" style="padding:4px 9px; font-size:11px;">✏️ Editar</button>
+                <button class="btn-secondary" style="padding:4px 9px; font-size:11px; color:var(--red-600);">🗑️</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="row" style="gap:10px;">
+                <div class="avatar" style="background:#E6F1FB; color:#185FA5; font-size:12px;">MR</div>
+                <div><div style="font-weight:500;">María Ríos</div><div style="font-size:11px; color:var(--text-muted);">Virú, La Libertad</div></div>
+              </div>
+            </td>
+            <td style="color:var(--text-secondary); font-size:12px;">m.rios@agropredict.pe</td>
+            <td><span class="badge badge-blue">👨‍💼 Asesor</span></td>
+            <td><span class="badge" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0;"><span class="dot-online" style="width:6px;height:6px;margin-right:4px;"></span>Activo</span></td>
+            <td style="font-size:12px; color:var(--text-muted);">Ayer, 15:21</td>
+            <td>
+              <div class="row" style="gap:6px;">
+                <button class="btn-secondary" style="padding:4px 9px; font-size:11px;">✏️ Editar</button>
+                <button class="btn-secondary" style="padding:4px 9px; font-size:11px; color:var(--red-600);">🗑️</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="row" style="gap:10px;">
+                <div class="avatar" style="background:#FAEEDA; color:#854F0B; font-size:12px;">CA</div>
+                <div><div style="font-weight:500;">César Aranda</div><div style="font-size:11px; color:var(--text-muted);">Trujillo, La Libertad</div></div>
+              </div>
+            </td>
+            <td style="color:var(--text-secondary); font-size:12px;">c.aranda@agropredict.pe</td>
+            <td><span class="badge badge-amber">⚙️ Admin</span></td>
+            <td><span class="badge" style="background:#dcfce7; color:#166534; border:1px solid #bbf7d0;"><span class="dot-online" style="width:6px;height:6px;margin-right:4px;"></span>Activo</span></td>
+            <td style="font-size:12px; color:var(--text-muted);">Hoy, 08:12</td>
+            <td>
+              <div class="row" style="gap:6px;">
+                <button class="btn-secondary" style="padding:4px 9px; font-size:11px;">✏️ Editar</button>
+                <button class="btn-secondary" style="padding:4px 9px; font-size:11px; color:var(--red-600);">🗑️</button>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="row" style="gap:10px;">
+                <div class="avatar" style="background:#F1EFE8; color:#5C5A54; font-size:12px;">LP</div>
+                <div><div style="font-weight:500;">Luis Pérez</div><div style="font-size:11px; color:var(--text-muted);">Chao, La Libertad</div></div>
+              </div>
+            </td>
+            <td style="color:var(--text-secondary); font-size:12px;">l.perez@agropredict.pe</td>
+            <td><span class="badge badge-green">🌾 Productor</span></td>
+            <td><span class="badge badge-gray">Inactivo</span></td>
+            <td style="font-size:12px; color:var(--text-muted);">03 May, 11:45</td>
+            <td>
+              <div class="row" style="gap:6px;">
+                <button class="btn-secondary" style="padding:4px 9px; font-size:11px;">✏️ Editar</button>
+                <button class="btn-secondary" style="padding:4px 9px; font-size:11px; color:var(--red-600);">🗑️</button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:10px; font-size:12px; color:var(--text-muted);">
+      <span>Mostrando 4 de 63 usuarios</span>
+      <div class="spacer"></div>
+      <button class="btn-secondary" style="font-size:11px; padding:5px 10px;">← Anterior</button>
+      <span style="background:var(--accent); color:white; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600;">1</span>
+      <button class="btn-secondary" style="font-size:11px; padding:5px 10px;">Siguiente →</button>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     F-03: MODELO PREDICTIVO DE PRECIOS FOB
+══════════════════════════════════════════════════════════ -->
+<section class="page" id="page-2">
+  <div class="gap-16">
+
+    <div class="grid-2">
+      <div class="card" style="background:var(--green-800); border-color:var(--green-600);">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:10px;">
+          <div>
+            <div style="font-size:11px; color:var(--green-100); margin-bottom:4px; text-transform:uppercase; letter-spacing:0.04em;">Precio FOB actual</div>
+            <div style="font-size:32px; font-weight:700; color:white; line-height:1;">US$ 2.91<span style="font-size:14px; font-weight:400;">/kg</span></div>
+          </div>
+          <span class="badge-white badge" style="font-size:12px;">📈 +3.8%</span>
+        </div>
+        <div style="font-size:12px; color:var(--green-100); margin-bottom:12px;">Últimos 7 días · Fuente: Aduanet 2026</div>
+        <div style="background:rgba(255,255,255,0.1); border-radius:8px; padding:10px 14px;">
+          <div style="font-size:11px; color:var(--green-100); margin-bottom:2px;">Variación semanal</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <div style="height:4px; flex:1; background:rgba(255,255,255,0.2); border-radius:2px; overflow:hidden;">
+              <div style="height:100%; width:72%; background:var(--green-200); border-radius:2px;"></div>
+            </div>
+            <span style="font-size:12px; color:white; font-weight:600;">72%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Seleccionar horizonte predictivo</div>
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="selectHorizon(this, '4 semanas')">4 semanas</button>
+          <button class="filter-tab" onclick="selectHorizon(this, '6 semanas')">6 semanas</button>
+          <button class="filter-tab" onclick="selectHorizon(this, '8 semanas')">8 semanas</button>
+        </div>
+        <div style="display:flex; align-items:baseline; gap:8px; margin-bottom:6px;">
+          <div id="pred-price" style="font-size:28px; font-weight:700; color:var(--accent);">US$ 3.15<span style="font-size:13px; font-weight:400;">/kg</span></div>
+          <span class="badge badge-green">Confianza: 87%</span>
+        </div>
+        <div class="grid-2" style="gap:8px; margin-top:8px;">
+          <div style="background:var(--red-50); border:1px solid var(--red-100); border-radius:8px; padding:8px 12px;">
+            <div style="font-size:10px; color:var(--red-600); margin-bottom:2px;">Rango inferior P10</div>
+            <div style="font-size:15px; font-weight:600; color:var(--red-600);">US$ 2.78/kg</div>
+          </div>
+          <div style="background:var(--green-50); border:1px solid var(--green-100); border-radius:8px; padding:8px 12px;">
+            <div style="font-size:10px; color:var(--green-600); margin-bottom:2px;">Rango superior P90</div>
+            <div style="font-size:15px; font-weight:600; color:var(--green-600);">US$ 3.52/kg</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Gráfico de precios FOB: histórico + predicción</div>
+      <div class="fob-chart" style="height:90px; gap:4px; align-items:flex-end; margin-bottom:8px;">
+        <div class="fob-col hist" style="height:45px;" title="Ene: $2.20"></div>
+        <div class="fob-col hist" style="height:52px;" title="Feb: $2.45"></div>
+        <div class="fob-col hist" style="height:58px;" title="Mar: $2.65"></div>
+        <div class="fob-col hist" style="height:68px;" title="Abr: $2.98"></div>
+        <div class="fob-col hist" style="height:75px;" title="May: $3.20"></div>
+        <div class="fob-col hist" style="height:80px;" title="Jun: $3.40"></div>
+        <div class="fob-col" style="height:86px; background:var(--accent); border-radius:3px 3px 0 0;" title="Jul: $3.68 (Pico histórico)"></div>
+        <div class="fob-col hist" style="height:70px;" title="Ago: $3.05"></div>
+        <div class="fob-col hist" style="height:62px;" title="Sep: $2.80"></div>
+        <div class="fob-col hist" style="height:55px;" title="Oct: $2.55"></div>
+        <div class="fob-col hist" style="height:48px;" title="Nov: $2.32"></div>
+        <div class="fob-col hist" style="height:43px;" title="Dic: $2.18"></div>
+        <div style="width:1px; background:var(--border-strong); height:90px; flex-shrink:0;"></div>
+        <div class="fob-col pred" style="height:58px;" title="Sem 1 predicción"></div>
+        <div class="fob-col pred" style="height:62px;" title="Sem 2 predicción"></div>
+        <div class="fob-col pred" style="height:65px;" title="Sem 3 predicción"></div>
+        <div class="fob-col pred" style="height:63px;" title="Sem 4 predicción"></div>
+      </div>
+      <div class="row" style="font-size:11px; color:var(--text-muted); gap:16px;">
+        <div style="display:flex; align-items:center; gap:5px;"><div style="width:12px; height:7px; background:var(--green-100); border-radius:2px;"></div>Histórico 2024</div>
+        <div style="display:flex; align-items:center; gap:5px;"><div style="width:12px; height:7px; background:var(--accent); border-radius:2px;"></div>Pico Jul</div>
+        <div style="display:flex; align-items:center; gap:5px;"><div style="width:12px; height:7px; background:var(--green-200); border-radius:2px; border:1px dashed var(--accent);"></div>Predicción (4 sem.)</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-title">Predicción por mercado de destino</div>
+        <div class="table-wrap" style="box-shadow:none; border:none; border-radius:0;">
+          <table>
+            <thead><tr><th>Mercado</th><th>4 sem.</th><th>8 sem.</th><th>Tendencia</th></tr></thead>
+            <tbody>
+              <tr><td style="font-weight:500;">🇺🇸 EE.UU.</td><td style="color:var(--green-600); font-weight:600;">$3.22</td><td>$3.41</td><td><span class="badge badge-green">📈 Alza</span></td></tr>
+              <tr><td style="font-weight:500;">🇳🇱 Países Bajos</td><td style="color:var(--green-600); font-weight:600;">$3.10</td><td>$3.28</td><td><span class="badge badge-green">📈 Alza</span></td></tr>
+              <tr><td style="font-weight:500;">🇪🇸 España</td><td style="color:var(--amber-400); font-weight:600;">$2.98</td><td>$3.05</td><td><span class="badge badge-gray">➡ Estable</span></td></tr>
+              <tr><td style="font-weight:500;">🇨🇳 China</td><td style="color:var(--red-600); font-weight:600;">$2.75</td><td>$2.62</td><td><span class="badge badge-red">📉 Baja</span></td></tr>
+              <tr><td style="font-weight:500;">🇬🇧 Reino Unido</td><td style="color:var(--green-600); font-weight:600;">$3.05</td><td>$3.18</td><td><span class="badge badge-green">📈 Alza</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">Parámetros del modelo activo</div>
+        <div class="gap-8">
+          <div class="metric-card" style="display:flex; gap:12px; align-items:center;">
+            <div style="font-size:26px;">🤖</div>
+            <div>
+              <div class="metric-label">Modelo</div>
+              <div style="font-size:14px; font-weight:600; font-family:'DM Mono', monospace;">SARIMA + LSTM</div>
+              <div class="metric-sub">Híbrido series tiempo / deep learning</div>
+            </div>
+          </div>
+          <div class="grid-2" style="gap:8px;">
+            <div class="metric-card">
+              <div class="metric-label">Error MAPE</div>
+              <div class="metric-value" style="font-size:22px;">4.8%</div>
+              <div class="metric-sub">Últimas 12 sem.</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">RMSE</div>
+              <div class="metric-value" style="font-size:22px;">1.23</div>
+              <div class="metric-sub">Val. dataset</div>
+            </div>
+          </div>
+          <div style="background:var(--green-50); border:1px solid var(--green-100); border-radius:var(--radius); padding:10px 14px; font-size:12px; color:var(--green-600); line-height:1.5;">
+            📊 Modelo entrenado con 128,222 registros Aduanet (2015–2026) + 5,607 registros INEI anuales. Algoritmos alternativos: Random Forest, XGBoost, SVR.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     F-04: ANÁLISIS HISTÓRICO
+══════════════════════════════════════════════════════════ -->
+<section class="page" id="page-3">
+  <div class="gap-16">
+
+    <div class="row" style="flex-wrap:wrap; gap:10px;">
+      <select class="field-select" style="width:auto; min-width:140px;">
+        <option>2024</option><option>2023</option><option>2022</option><option>2021</option><option>2020</option>
+      </select>
+      <select class="field-select" style="width:auto; min-width:160px;">
+        <option>Todos los mercados</option><option>EE.UU.</option><option>Europa</option><option>Asia</option>
+      </select>
+      <select class="field-select" style="width:auto; min-width:140px;">
+        <option>Todos los calibres</option><option>Calibre 12</option><option>Calibre 16</option><option>Calibre 20</option>
+      </select>
+      <button class="btn-primary">🔍 Aplicar filtros</button>
+      <button class="btn-secondary">🔄 Limpiar</button>
+    </div>
+
+    <div class="card">
+      <div class="row" style="margin-bottom:16px;">
+        <div class="section-title" style="margin:0;">Precio FOB mensual — 2024 (US$/kg)</div>
+        <div class="spacer"></div>
+        <div class="row" style="gap:8px; font-size:11px; color:var(--text-muted);">
+          <div style="display:flex; align-items:center; gap:4px;"><div style="width:10px; height:6px; background:var(--green-400); border-radius:2px;"></div>2024</div>
+          <div style="display:flex; align-items:center; gap:4px;"><div style="width:10px; height:6px; background:var(--gray-200); border-radius:2px;"></div>2023</div>
+          <div style="display:flex; align-items:center; gap:4px;"><div style="width:10px; height:6px; background:var(--blue-200); border-radius:2px;"></div>2022</div>
+        </div>
+      </div>
+
+      <div class="bar-chart" style="height:120px; align-items:flex-end; gap:6px;">
+        <div class="bar-col">
+          <div class="bar-fill" style="height:40px; background:var(--green-100);"></div>
+          <div class="bar-fill" style="height:33px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">Ene</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-fill" style="height:48px; background:var(--green-200);"></div>
+          <div class="bar-fill" style="height:38px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">Feb</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-fill" style="height:55px; background:var(--green-200);"></div>
+          <div class="bar-fill" style="height:45px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">Mar</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-fill" style="height:68px; background:var(--green-400);"></div>
+          <div class="bar-fill" style="height:55px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">Abr</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-fill" style="height:76px; background:var(--green-400);"></div>
+          <div class="bar-fill" style="height:62px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">May</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-fill" style="height:82px; background:var(--green-600);"></div>
+          <div class="bar-fill" style="height:70px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">Jun</div>
+        </div>
+        <div class="bar-col" style="position:relative;">
+          <div style="position:absolute; top:-22px; left:50%; transform:translateX(-50%); background:var(--green-800); color:white; font-size:9px; padding:2px 6px; border-radius:4px; white-space:nowrap; z-index:1;">PICO $3.90</div>
+          <div class="bar-fill" style="height:110px; background:var(--green-800);"></div>
+          <div class="bar-fill" style="height:82px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label" style="font-weight:600; color:var(--green-600);">Jul</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-fill" style="height:72px; background:var(--green-400);"></div>
+          <div class="bar-fill" style="height:64px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">Ago</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-fill" style="height:60px; background:var(--green-200);"></div>
+          <div class="bar-fill" style="height:52px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">Sep</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-fill" style="height:48px; background:var(--green-100);"></div>
+          <div class="bar-fill" style="height:42px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">Oct</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-fill" style="height:36px; background:var(--green-100);"></div>
+          <div class="bar-fill" style="height:30px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">Nov</div>
+        </div>
+        <div class="bar-col">
+          <div class="bar-fill" style="height:38px; background:var(--green-100);"></div>
+          <div class="bar-fill" style="height:28px; background:var(--gray-100); border-radius:2px 2px 0 0;"></div>
+          <div class="bar-label">Dic</div>
+        </div>
+      </div>
+      <div class="row" style="margin-top:6px; font-size:11px; color:var(--text-muted);">
+        <span>US$ 0.00</span><div class="spacer"></div><span>Escala: US$ 0 – $9.00/kg</span><div class="spacer"></div><span>US$ 9.00</span>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card" style="background:var(--green-50); border-color:var(--green-100);">
+        <div style="font-size:11px; color:var(--green-600); font-weight:600; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.04em;">🏆 Pico máximo 2024</div>
+        <div style="font-size:22px; font-weight:700; color:var(--green-800);">Julio · US$ 3.90/kg</div>
+        <div style="font-size:12px; color:var(--green-600); margin-top:4px;">Ventana de exportación principal · Mercado: EE.UU. + Europa</div>
+      </div>
+      <div class="card" style="background:var(--red-50); border-color:var(--red-100);">
+        <div style="font-size:11px; color:var(--red-600); font-weight:600; margin-bottom:4px; text-transform:uppercase; letter-spacing:0.04em;">⚠️ Mes crítico 2024</div>
+        <div style="font-size:22px; font-weight:700; color:var(--red-600);">Enero · US$ 2.20/kg</div>
+        <div style="font-size:12px; color:var(--red-600); margin-top:4px;">Sobreoferta estacional · Baja rentabilidad histórica</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Comparativo multianual por mes clave</div>
+      <div class="table-wrap" style="box-shadow:none; border:none; border-radius:0;">
+        <table>
+          <thead><tr><th>Mes</th><th>2021</th><th>2022</th><th>2023</th><th>2024</th><th>Tendencia 3 años</th></tr></thead>
+          <tbody>
+            <tr><td style="font-weight:500;">Enero</td><td>$2.05</td><td>$2.10</td><td>$2.15</td><td style="font-weight:600; color:var(--green-600);">$2.20</td><td><span class="badge badge-green">📈 +7%</span></td></tr>
+            <tr><td style="font-weight:500;">Mayo</td><td>$3.20</td><td>$3.40</td><td>$3.15</td><td style="font-weight:600; color:var(--green-600);">$3.58</td><td><span class="badge badge-green">📈 +12%</span></td></tr>
+            <tr><td style="font-weight:500;">Julio</td><td>$3.55</td><td>$3.90</td><td>$3.55</td><td style="font-weight:600; color:var(--green-600);">$3.90</td><td><span class="badge badge-gray">➡ Estable</span></td></tr>
+            <tr><td style="font-weight:500;">Octubre</td><td>$2.40</td><td>$2.65</td><td>$2.48</td><td style="font-weight:600; color:var(--red-600);">$2.35</td><td><span class="badge badge-red">📉 -2%</span></td></tr>
+            <tr><td style="font-weight:500;">Diciembre</td><td>$2.10</td><td>$2.25</td><td>$2.20</td><td style="font-weight:600; color:var(--green-600);">$2.32</td><td><span class="badge badge-green">📈 +5%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     F-05: SIMULADOR DE ESCENARIOS
+══════════════════════════════════════════════════════════ -->
+<section class="page" id="page-4">
+  <div class="gap-16">
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-title">🌱 Datos de tu campaña</div>
+        <div class="gap-12">
+          <div class="grid-2" style="gap:10px;">
+            <div class="field-group">
+              <label class="field-label">Hectáreas</label>
+              <input class="field-input" type="number" id="sim-ha" value="5" min="0.5" max="500" oninput="calcScenarios()">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Productividad (t/ha)</label>
+              <input class="field-input" type="number" id="sim-prod" value="4.2" step="0.1" oninput="calcScenarios()">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Costo prod. (US$/kg)</label>
+              <input class="field-input" type="number" id="sim-cost" value="0.85" step="0.01" oninput="calcScenarios()">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Flete estimado (US$/kg)</label>
+              <input class="field-input" type="number" id="sim-flete" value="0.30" step="0.01" oninput="calcScenarios()">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Precio FOB predicho</label>
+              <input class="field-input" type="number" id="sim-fob" value="3.15" step="0.01" style="border-color:var(--green-200);" oninput="calcScenarios()">
+            </div>
+            <div class="field-group">
+              <label class="field-label">Campaña</label>
+              <select class="field-select">
+                <option>2026 – Q2</option><option>2026 – Q3</option><option>2027 – Q1</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn-primary full" onclick="calcScenarios()">⚡ Calcular escenarios</button>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--surface-2);">
+        <div class="section-title">📊 Resumen de campaña</div>
+        <div class="gap-8">
+          <div class="grid-2" style="gap:8px;">
+            <div class="metric-card">
+              <div class="metric-label">Producción total</div>
+              <div class="metric-value" id="sim-total-prod" style="color:var(--accent);">21.0 t</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Inversión estimada</div>
+              <div class="metric-value" id="sim-inversion" style="font-size:18px;">S/ 56,700</div>
+            </div>
+          </div>
+          <div class="grid-2" style="gap:8px;">
+            <div class="metric-card">
+              <div class="metric-label">Punto equilibrio</div>
+              <div class="metric-value" id="sim-break" style="font-size:18px;">US$ 1.15</div>
+              <div class="metric-sub">/kg</div>
+            </div>
+            <div class="metric-card">
+              <div class="metric-label">Riesgo</div>
+              <div class="metric-value" id="sim-risk" style="font-size:18px; color:var(--amber-400);">Medio</div>
+            </div>
+          </div>
+          <div style="background:var(--green-50); border:1px solid var(--green-100); border-radius:var(--radius); padding:10px 14px; font-size:12px; color:var(--green-600);">
+            💡 Precio predicho (US$ <span id="sim-fob-display">3.15</span>/kg) supera ampliamente el punto de equilibrio. Margen de seguridad positivo.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gap-8">
+      <div class="section-title">Escenarios de rentabilidad por campaña</div>
+
+      <div class="scenario-card" style="background:var(--green-50); border-color:var(--green-100);">
+        <div class="scenario-icon" style="background:var(--green-400);">📈</div>
+        <div style="flex:1;">
+          <div style="font-size:13px; font-weight:600; color:var(--green-800); margin-bottom:2px;">Escenario optimista</div>
+          <div style="font-size:12px; color:var(--green-600);">Precio FOB: US$ <span id="sc-opt-price">3.52</span>/kg · Probabilidad histórica: 28%</div>
+          <div class="progress-bar" style="margin-top:8px; width:200px;">
+            <div class="progress-fill" style="width:92%;"></div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:20px; font-weight:700; color:var(--green-800);" id="sc-opt-gain">+ S/ 52,290</div>
+          <div class="badge badge-green" id="sc-opt-roi">ROI: +92.2%</div>
+        </div>
+      </div>
+
+      <div class="scenario-card" style="background:var(--amber-50); border-color:var(--amber-100);">
+        <div class="scenario-icon" style="background:var(--amber-400);">➡️</div>
+        <div style="flex:1;">
+          <div style="font-size:13px; font-weight:600; color:var(--amber-600); margin-bottom:2px;">Escenario medio</div>
+          <div style="font-size:12px; color:var(--amber-400);">Precio FOB: US$ <span id="sc-mid-price">3.15</span>/kg · Probabilidad histórica: 52%</div>
+          <div class="progress-bar" style="margin-top:8px; width:200px;">
+            <div class="progress-fill" style="width:62%; background:var(--amber-200);"></div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:20px; font-weight:700; color:var(--amber-600);" id="sc-mid-gain">+ S/ 29,085</div>
+          <div class="badge badge-amber" id="sc-mid-roi">ROI: +51.3%</div>
+        </div>
+      </div>
+
+      <div class="scenario-card" style="background:var(--red-50); border-color:var(--red-100);">
+        <div class="scenario-icon" style="background:var(--red-600);">📉</div>
+        <div style="flex:1;">
+          <div style="font-size:13px; font-weight:600; color:var(--red-600); margin-bottom:2px;">Escenario pesimista</div>
+          <div style="font-size:12px; color:var(--red-600);">Precio FOB: US$ <span id="sc-pes-price">2.78</span>/kg · Probabilidad histórica: 20%</div>
+          <div class="progress-bar" style="margin-top:8px; width:200px;">
+            <div class="progress-fill" style="width:28%; background:var(--red-400);"></div>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:20px; font-weight:700; color:var(--red-600);" id="sc-pes-gain">+ S/ 5,229</div>
+          <div class="badge badge-red" id="sc-pes-roi">ROI: +9.2%</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     F-06: RECOMENDACIÓN DE SIEMBRA
+══════════════════════════════════════════════════════════ -->
+<section class="page" id="page-5">
+  <div class="gap-16">
+
+    <div class="rec-hero">
+      <div style="margin-bottom:10px;">
+        <span class="badge" style="background:rgba(255,255,255,0.15); color:rgba(255,255,255,0.75); font-size:11px; border:1px solid rgba(255,255,255,0.2);">Campaña 2026 – Q2 · Jorge Sánchez · 5 ha</span>
+      </div>
+      <div class="rec-badge-big">✅ SEMBRAR</div>
+      <div class="rec-sub">Recomendación generada por modelo SARIMA + LSTM con 87% de confianza</div>
+      <div style="display:flex; justify-content:center; gap:16px; margin-top:16px;">
+        <div style="text-align:center;">
+          <div style="font-size:11px; color:rgba(255,255,255,0.6);">Confianza</div>
+          <div style="font-size:20px; font-weight:700; color:white;">87%</div>
+        </div>
+        <div style="width:1px; background:rgba(255,255,255,0.2);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:11px; color:rgba(255,255,255,0.6);">Riesgo</div>
+          <div style="font-size:20px; font-weight:700; color:white;">Medio</div>
+        </div>
+        <div style="width:1px; background:rgba(255,255,255,0.2);"></div>
+        <div style="text-align:center;">
+          <div style="font-size:11px; color:rgba(255,255,255,0.6);">ROI esperado</div>
+          <div style="font-size:20px; font-weight:700; color:white;">+51%</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="section-title">📋 Justificación del modelo</div>
+        <div class="gap-8">
+          <div style="display:flex; gap:10px; align-items:flex-start;">
+            <div style="width:22px; height:22px; background:var(--green-50); border:1px solid var(--green-100); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:11px; color:var(--green-600); font-weight:700; margin-top:1px;">✓</div>
+            <p style="font-size:13px; line-height:1.6; color:var(--text-primary);">Precio FOB predicho a 4 semanas (<strong>US$ 3.15/kg</strong>) supera el punto de equilibrio de US$ 1.15/kg en 173%.</p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:flex-start;">
+            <div style="width:22px; height:22px; background:var(--green-50); border:1px solid var(--green-100); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:11px; color:var(--green-600); font-weight:700; margin-top:1px;">✓</div>
+            <p style="font-size:13px; line-height:1.6; color:var(--text-primary);">Historial 2022–2024 confirma precio estable en Q2 con tendencia alcista hacia julio–agosto (ventana exportación).</p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:flex-start;">
+            <div style="width:22px; height:22px; background:var(--green-50); border:1px solid var(--green-100); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:11px; color:var(--green-600); font-weight:700; margin-top:1px;">✓</div>
+            <p style="font-size:13px; line-height:1.6; color:var(--text-primary);">Escenario pesimista aún genera ROI positivo (+9.2%), riesgo de pérdida controlado con margen de seguridad.</p>
+          </div>
+          <div style="display:flex; gap:10px; align-items:flex-start;">
+            <div style="width:22px; height:22px; background:var(--amber-50); border:1px solid var(--amber-100); border-radius:50%; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:11px; color:var(--amber-400); font-weight:700; margin-top:1px;">⚠</div>
+            <p style="font-size:13px; line-height:1.6; color:var(--text-primary);">Monitorear volumen exportado de Chile y México. Sobreoferta podría presionar precios en agosto–septiembre.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title">🔄 Otras opciones analizadas</div>
+        <div class="gap-8">
+          <div style="border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px;">
+            <div class="row" style="margin-bottom:6px;">
+              <span style="font-size:16px;">📉</span>
+              <div style="flex:1; margin-left:6px; font-size:13px; font-weight:500;">Reducir área de siembra</div>
+              <span class="badge badge-gray">No aplica</span>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">Se activaría si precio FOB proyectado cae por debajo de US$ 1.50/kg o incertidumbre supera 40%.</p>
+          </div>
+          <div style="border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px;">
+            <div class="row" style="margin-bottom:6px;">
+              <span style="font-size:16px;">⏳</span>
+              <div style="flex:1; margin-left:6px; font-size:13px; font-weight:500;">Esperar siguiente ciclo</div>
+              <span class="badge badge-gray">No aplica</span>
+            </div>
+            <p style="font-size:12px; color:var(--text-muted); line-height:1.5;">Se activaría si la incertidumbre del modelo supera 30% o todos los escenarios proyectan pérdida.</p>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div style="display:flex; gap:8px; flex-wrap:wrap; margin-top:4px;">
+          <button class="btn-primary" onclick="showPage(4)">📊 Ver simulación detallada</button>
+          <button class="btn-secondary">📥 Exportar PDF</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     F-07: REPORTES DE CICLOS
+══════════════════════════════════════════════════════════ -->
+<section class="page" id="page-6">
+  <div class="gap-16">
+
+    <div class="row" style="flex-wrap:wrap; gap:10px;">
+      <select class="field-select" style="width:auto; min-width:200px;">
+        <option>Campaña 2024 – Q2</option><option>Campaña 2023 – Q2</option><option>Campaña 2024 – Q3</option>
+      </select>
+      <select class="field-select" style="width:auto; min-width:160px;">
+        <option>Todos los mercados</option><option>EE.UU.</option><option>Europa</option>
+      </select>
+      <button class="btn-primary">📊 Generar reporte</button>
+      <button class="btn-secondary">📥 Descargar PDF</button>
+      <button class="btn-secondary">📋 Exportar Excel</button>
+    </div>
+
+    <div class="grid-4">
+      <div class="metric-card">
+        <div class="metric-label">Semanas analizadas</div>
+        <div class="metric-value" style="color:var(--accent);">156</div>
+        <div class="metric-sub">2021 – 2024</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Precio promedio</div>
+        <div class="metric-value" style="font-size:20px;">$3.08</div>
+        <div class="metric-sub">US$/kg histórico</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Ciclos detectados</div>
+        <div class="metric-value">3</div>
+        <div class="metric-sub">Patrones recurrentes</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Precisión modelo</div>
+        <div class="metric-value" style="color:var(--accent);">91%</div>
+        <div class="metric-sub">Detección ciclos</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">🔄 Ciclos históricos detectados</div>
+      <div class="gap-8">
+        <div class="pattern-row">
+          <div class="pattern-dot" style="background:var(--green-400);"></div>
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:500; margin-bottom:2px;">Pico Jul–Ago · Ventana de exportación principal</div>
+            <div style="font-size:11px; color:var(--text-muted);">Promedio histórico US$ 3.80/kg · Detectado en 3 de 3 campañas analizadas</div>
+          </div>
+          <div style="width:120px;">
+            <div class="progress-bar" style="margin-bottom:3px;"><div class="progress-fill" style="width:100%;"></div></div>
+            <div style="font-size:10px; color:var(--text-muted); text-align:right;">3/3 campañas</div>
+          </div>
+          <span class="badge badge-green">100%</span>
+        </div>
+        <div class="pattern-row">
+          <div class="pattern-dot" style="background:var(--red-400);"></div>
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:500; margin-bottom:2px;">Caída Dic–Feb · Sobreoferta estacional</div>
+            <div style="font-size:11px; color:var(--text-muted);">Promedio US$ 2.10/kg · Alta concentración de exportaciones peruanas</div>
+          </div>
+          <div style="width:120px;">
+            <div class="progress-bar" style="margin-bottom:3px;"><div class="progress-fill" style="width:100%; background:var(--red-400);"></div></div>
+            <div style="font-size:10px; color:var(--text-muted); text-align:right;">3/3 campañas</div>
+          </div>
+          <span class="badge badge-red">100%</span>
+        </div>
+        <div class="pattern-row">
+          <div class="pattern-dot" style="background:var(--amber-200);"></div>
+          <div style="flex:1;">
+            <div style="font-size:13px; font-weight:500; margin-bottom:2px;">Recuperación Abr–Jun · Alza progresiva</div>
+            <div style="font-size:11px; color:var(--text-muted);">Promedio US$ 3.20/kg · Apertura de ventana comercial Q2</div>
+          </div>
+          <div style="width:120px;">
+            <div class="progress-bar" style="margin-bottom:3px;"><div class="progress-fill" style="width:67%; background:var(--amber-200);"></div></div>
+            <div style="font-size:10px; color:var(--text-muted); text-align:right;">2/3 campañas</div>
+          </div>
+          <span class="badge badge-amber">67%</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">📈 Comparativo de campañas — precio promedio FOB</div>
+      <div class="table-wrap" style="box-shadow:none; border:none; border-radius:0;">
+        <table>
+          <thead><tr><th>Campaña</th><th>Precio promedio</th><th>Volumen exportado</th><th>Ingreso total</th><th>vs. campaña anterior</th><th>Resultado</th></tr></thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:500;">2024 – Q2</td>
+              <td style="color:var(--green-600); font-weight:600;">US$ 3.41/kg</td>
+              <td>5,200 t</td>
+              <td style="font-family:'DM Mono', monospace;">$17,732,000</td>
+              <td><span class="badge badge-green">📈 +18%</span></td>
+              <td><span class="badge badge-green">Muy bueno</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;">2023 – Q2</td>
+              <td>US$ 3.15/kg</td>
+              <td>4,800 t</td>
+              <td style="font-family:'DM Mono', monospace;">$15,120,000</td>
+              <td><span class="badge badge-gray">Base</span></td>
+              <td><span class="badge badge-green">Bueno</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;">2022 – Q2</td>
+              <td>US$ 3.58/kg</td>
+              <td>4,500 t</td>
+              <td style="font-family:'DM Mono', monospace;">$16,110,000</td>
+              <td><span class="badge badge-green">📈 +14%</span></td>
+              <td><span class="badge badge-green">Muy bueno</span></td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;">2021 – Q2</td>
+              <td style="color:var(--red-600);">US$ 2.80/kg</td>
+              <td>4,200 t</td>
+              <td style="font-family:'DM Mono', monospace;">$11,760,000</td>
+              <td><span class="badge badge-red">📉 -8%</span></td>
+              <td><span class="badge badge-amber">Regular</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════════════════
+     F-08: ALERTAS Y NOTIFICACIONES
+══════════════════════════════════════════════════════════ -->
+<section class="page" id="page-7">
+  <div class="gap-16">
+
+    <div class="grid-4">
+      <div class="metric-card">
+        <div class="metric-label">Sin leer</div>
+        <div class="metric-value" style="color:var(--red-400);">3</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Total hoy</div>
+        <div class="metric-value">7</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Enviadas WhatsApp</div>
+        <div class="metric-value" style="color:var(--green-400);">5</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Enviadas email</div>
+        <div class="metric-value">12</div>
+      </div>
+    </div>
+
+    <div class="row" style="flex-wrap:wrap; gap:10px;">
+      <div class="filter-tabs" style="margin:0;">
+        <button class="filter-tab active">Todas</button>
+        <button class="filter-tab">🔴 Riesgo</button>
+        <button class="filter-tab">🟢 Oportunidad</button>
+        <button class="filter-tab">🔵 Clima</button>
+        <button class="filter-tab">📊 Predicción</button>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn-secondary" style="font-size:12px;">✅ Marcar todas como leídas</button>
+    </div>
+
+    <div class="gap-8">
+
+      <div class="alert-item" style="border-color:var(--red-200); border-left:3px solid var(--red-400);">
+        <div class="alert-icon-wrap" style="background:var(--red-50);">⚠️</div>
+        <div style="flex:1;">
+          <div class="row" style="margin-bottom:6px;">
+            <span class="badge badge-red">🔴 Riesgo</span>
+            <span style="font-size:11px; color:var(--text-muted);">Hace 3 horas</span>
+            <div class="spacer"></div>
+            <span class="badge" style="background:var(--red-50); color:var(--red-600); font-size:10px; border:1px solid var(--red-100);">No leído</span>
+          </div>
+          <p style="font-size:13px; font-weight:600; margin-bottom:4px;">Sobreoferta detectada</p>
+          <p style="font-size:12px; color:var(--text-secondary); line-height:1.5; margin-bottom:10px;">El volumen exportado en la última semana superó las proyecciones en un 18%. Posible presión a la baja en precios FOB próximas 2 semanas.</p>
+          <div class="row" style="gap:6px; flex-wrap:wrap;">
+            <button class="btn-secondary" style="font-size:11px; padding:5px 10px;">📧 Enviar email</button>
+            <button class="btn-secondary" style="font-size:11px; padding:5px 10px; color:var(--green-600);">📱 Enviar WhatsApp</button>
+            <button class="btn-secondary" style="font-size:11px; padding:5px 10px;">📊 Ver predicción</button>
+            <button class="btn-secondary" style="font-size:11px; padding:5px 10px; color:var(--text-muted);">✓ Marcar leído</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-item" style="border-color:var(--green-200); border-left:3px solid var(--green-400);">
+        <div class="alert-icon-wrap" style="background:var(--green-50);">📈</div>
+        <div style="flex:1;">
+          <div class="row" style="margin-bottom:6px;">
+            <span class="badge badge-green">🟢 Oportunidad</span>
+            <span style="font-size:11px; color:var(--text-muted);">Ayer, 14:30</span>
+            <div class="spacer"></div>
+            <span class="badge" style="background:var(--red-50); color:var(--red-600); font-size:10px; border:1px solid var(--red-100);">No leído</span>
+          </div>
+          <p style="font-size:13px; font-weight:600; margin-bottom:4px;">Ventana favorable EE.UU.</p>
+          <p style="font-size:12px; color:var(--text-secondary); line-height:1.5; margin-bottom:10px;">La demanda en el mercado estadounidense muestra una tendencia alcista del 12% para las próximas 2 semanas. Precio FOB estimado: US$ 3.22/kg.</p>
+          <div class="row" style="gap:6px; flex-wrap:wrap;">
+            <button class="btn-secondary" style="font-size:11px; padding:5px 10px;">📧 Enviar email</button>
+            <button class="btn-secondary" style="font-size:11px; padding:5px 10px; color:var(--green-600);">📱 Enviar WhatsApp</button>
+            <button class="btn-secondary" style="font-size:11px; padding:5px 10px; color:var(--text-muted);">✓ Marcar leído</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-item" style="border-color:var(--blue-200); border-left:3px solid var(--blue-400);">
+        <div class="alert-icon-wrap" style="background:var(--blue-50);">🌧️</div>
+        <div style="flex:1;">
+          <div class="row" style="margin-bottom:6px;">
+            <span class="badge badge-blue">🔵 Clima</span>
+            <span style="font-size:11px; color:var(--text-muted);">Hace 5 horas</span>
+            <div class="spacer"></div>
+            <span class="badge" style="background:var(--red-50); color:var(--red-600); font-size:10px; border:1px solid var(--red-100);">No leído</span>
+          </div>
+          <p style="font-size:13px; font-weight:600; margin-bottom:4px;">Riesgo climático moderado</p>
+          <p style="font-size:12px; color:var(--text-secondary); line-height:1.5; margin-bottom:10px;">Se esperan lluvias intensas en la zona norte de La Libertad durante los próximos 5 días. Monitorear condiciones de campo en Virú y Chao.</p>
+          <div class="row" style="gap:6px;">
+            <button class="btn-secondary" style="font-size:11px; padding:5px 10px;">📧 Enviar email</button>
+            <button class="btn-secondary" style="font-size:11px; padding:5px 10px; color:var(--green-600);">📱 Enviar WhatsApp</button>
+            <button class="btn-secondary" style="font-size:11px; padding:5px 10px; color:var(--text-muted);">✓ Marcar leído</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="alert-item">
+        <div class="alert-icon-wrap" style="background:var(--gray-50);">📊</div>
+        <div style="flex:1;">
+          <div class="row" style="margin-bottom:6px;">
+            <span class="badge badge-gray">📊 Predicción semanal</span>
+            <span style="font-size:11px; color:var(--text-muted);">Hace 2 días</span>
+          </div>
+          <p style="font-size:13px; font-weight:600; margin-bottom:4px;">Resumen semanal enviado</p>
+          <p style="font-size:12px; color:var(--text-secondary); line-height:1.5;">Pronóstico de precios FOB a 4 semanas (US$ 3.15/kg) y recomendación de siembra enviados por WhatsApp y correo electrónico.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="card">
+      <div class="section-title">⚙️ Configuración de envío de notificaciones</div>
+      <div>
+        <div class="notif-config-row">
+          <span style="font-size:18px;">📱</span>
+          <div style="flex:1; margin-left:8px;">
+            <div style="font-size:13px; font-weight:500;">WhatsApp</div>
+            <div style="font-size:11px; color:var(--text-muted);">+51 944 123 456</div>
+          </div>
+          <span class="badge badge-green">Activo</span>
+          <button class="toggle" onclick="this.classList.toggle('off'); this.previousElementSibling.className = this.classList.contains('off') ? 'badge badge-gray' : 'badge badge-green'; this.previousElementSibling.textContent = this.classList.contains('off') ? 'Inactivo' : 'Activo';"></button>
+        </div>
+        <div class="notif-config-row">
+          <span style="font-size:18px;">📧</span>
+          <div style="flex:1; margin-left:8px;">
+            <div style="font-size:13px; font-weight:500;">Correo electrónico</div>
+            <div style="font-size:11px; color:var(--text-muted);">jorge.s@agropredict.pe</div>
+          </div>
+          <span class="badge badge-green">Activo</span>
+          <button class="toggle" onclick="this.classList.toggle('off'); this.previousElementSibling.className = this.classList.contains('off') ? 'badge badge-gray' : 'badge badge-green'; this.previousElementSibling.textContent = this.classList.contains('off') ? 'Inactivo' : 'Activo';"></button>
+        </div>
+        <div class="notif-config-row">
+          <span style="font-size:18px;">🔔</span>
+          <div style="flex:1; margin-left:8px;">
+            <div style="font-size:13px; font-weight:500;">Frecuencia de resumen</div>
+            <div style="font-size:11px; color:var(--text-muted);">Envío automático del pronóstico</div>
+          </div>
+          <select class="field-select" style="width:auto; min-width:130px; font-size:12px; padding:6px 10px;">
+            <option>Semanal (lunes)</option><option>Diario</option><option>Quincenal</option>
+          </select>
+        </div>
+        <div class="notif-config-row">
+          <span style="font-size:18px;">⚡</span>
+          <div style="flex:1; margin-left:8px;">
+            <div style="font-size:13px; font-weight:500;">Alertas de riesgo inmediatas</div>
+            <div style="font-size:11px; color:var(--text-muted);">Sobreoferta, caídas >15%, clima adverso</div>
+          </div>
+          <span class="badge badge-green">Activo</span>
+          <button class="toggle" onclick="this.classList.toggle('off'); this.previousElementSibling.className = this.classList.contains('off') ? 'badge badge-gray' : 'badge badge-green'; this.previousElementSibling.textContent = this.classList.contains('off') ? 'Inactivo' : 'Activo';"></button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+</main>
+
+<!-- FOOTER -->
+<footer style="background:var(--surface); border-top:1px solid var(--border); padding:12px 24px; display:flex; align-items:center; gap:12px; font-size:11px; color:var(--text-muted);">
+  <span>🌿 AgroPredict v1.0</span>
+  <span>·</span>
+  <span>Universidad Nacional de Trujillo · Ing. de Sistemas · 2025</span>
+  <div style="flex:1;"></div>
+  <span>Datos: Aduanet + INEI · 128,222 registros</span>
+</footer>
+
+<script>
+const SCREEN_META = [
+  { id:'F-01', title:'Inicio de sesión', desc:'Autentica al usuario con credenciales y habilita acceso según rol' },
+  { id:'F-02', title:'Gestión de usuarios', desc:'Permite crear, listar y editar usuarios del sistema' },
+  { id:'F-03', title:'Modelo predictivo de precios FOB', desc:'Ejecuta los modelos para estimar precio FOB a 4, 6 y 8 semanas con rangos de confianza' },
+  { id:'F-04', title:'Visualización de precios históricos', desc:'Gráficos interactivos de precios FOB desde 2018 con filtros por fecha y mercado' },
+  { id:'F-05', title:'Simulador de rentabilidad por campaña', desc:'Permite seleccionar escenarios y calcular ganancia esperada por hectárea' },
+  { id:'F-06', title:'Generador de recomendación de siembra', desc:'Sugiere "sembrar", "reducir área" o "esperar" con justificación basada en predicción' },
+  { id:'F-07', title:'Generación de reportes de ciclos', desc:'Analiza patrones históricos y genera informe comparativo con campañas anteriores' },
+  { id:'F-08', title:'Envío de alertas y resúmenes', desc:'Envía vía WhatsApp o correo el pronóstico de precios y la recomendación al productor' }
+];
+
+function showPage(idx) {
+  document.querySelectorAll('.page').forEach((p, i) => p.classList.toggle('active', i === idx));
+  document.querySelectorAll('.nav-pill').forEach((t, i) => t.classList.toggle('active', i === idx));
+  const m = SCREEN_META[idx];
+  document.getElementById('screen-id-badge').textContent = m.id;
+  document.getElementById('screen-title-text').textContent = m.title;
+  document.getElementById('screen-desc-text').textContent = m.desc;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function selectRole(el) {
+  document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function selectHorizon(el, label) {
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  const prices = { '4 semanas': { price:'3.15', low:'2.78', high:'3.52', conf:'87' },
+                   '6 semanas': { price:'3.28', low:'2.65', high:'3.68', conf:'81' },
+                   '8 semanas': { price:'3.41', low:'2.52', high:'3.85', conf:'75' } };
+  const p = prices[label];
+  if(p) document.getElementById('pred-price').innerHTML =
+    `US$ ${p.price}<span style="font-size:13px; font-weight:400;">/kg</span>`;
+}
+
+function calcScenarios() {
+  const ha   = parseFloat(document.getElementById('sim-ha').value) || 5;
+  const prod = parseFloat(document.getElementById('sim-prod').value) || 4.2;
+  const cost = parseFloat(document.getElementById('sim-cost').value) || 0.85;
+  const flete= parseFloat(document.getElementById('sim-flete').value) || 0.30;
+  const fob  = parseFloat(document.getElementById('sim-fob').value) || 3.15;
+  const USD_TO_PEN = 3.78;
+
+  const totalTon = ha * prod;
+  const totalKg  = totalTon * 1000;
+  const costoTotal = (cost + flete) * totalKg;
+  const breakEven = cost + flete;
+  const risk = (fob - breakEven) / fob;
+
+  document.getElementById('sim-total-prod').textContent = totalTon.toFixed(1) + ' t';
+  document.getElementById('sim-inversion').textContent = 'S/ ' + (costoTotal * USD_TO_PEN).toLocaleString('es-PE', {maximumFractionDigits:0});
+  document.getElementById('sim-break').textContent = 'US$ ' + breakEven.toFixed(2);
+  document.getElementById('sim-risk').textContent = risk > 0.5 ? 'Bajo' : risk > 0.3 ? 'Medio' : 'Alto';
+  document.getElementById('sim-fob-display').textContent = fob.toFixed(2);
+
+  const optFOB = fob * 1.117;
+  const midFOB = fob;
+  const pesFOB = fob * 0.883;
+
+  function calcGain(price) {
+    return (price - cost - flete) * totalKg * USD_TO_PEN;
+  }
+  function calcROI(price) {
+    return ((price - cost - flete) / (cost + flete)) * 100;
+  }
+
+  document.getElementById('sc-opt-price').textContent = optFOB.toFixed(2);
+  document.getElementById('sc-mid-price').textContent = midFOB.toFixed(2);
+  document.getElementById('sc-pes-price').textContent = pesFOB.toFixed(2);
+
+  const optG = calcGain(optFOB);
+  const midG = calcGain(midFOB);
+  const pesG = calcGain(pesFOB);
+  const optR = calcROI(optFOB);
+  const midR = calcROI(midFOB);
+  const pesR = calcROI(pesFOB);
+
+  function fmt(v) { return (v >= 0 ? '+ ' : '- ') + 'S/ ' + Math.abs(v).toLocaleString('es-PE', {maximumFractionDigits:0}); }
+  document.getElementById('sc-opt-gain').textContent = fmt(optG);
+  document.getElementById('sc-mid-gain').textContent = fmt(midG);
+  document.getElementById('sc-pes-gain').textContent = fmt(pesG);
+  document.getElementById('sc-opt-roi').textContent = 'ROI: ' + (optR >= 0 ? '+' : '') + optR.toFixed(1) + '%';
+  document.getElementById('sc-mid-roi').textContent = 'ROI: ' + (midR >= 0 ? '+' : '') + midR.toFixed(1) + '%';
+  document.getElementById('sc-pes-roi').textContent = 'ROI: ' + (pesR >= 0 ? '+' : '') + pesR.toFixed(1) + '%';
+}
+
+document.querySelectorAll('.filter-tabs .filter-tab').forEach(tab => {
+  tab.addEventListener('click', function() {
+    this.closest('.filter-tabs').querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+  });
+});
+
+calcScenarios();
+</script>
+</body>
+</html>

@@ -4,7 +4,7 @@ import { adminRoutes } from '../../modules/admin/routes'
 import { predictionRoutes } from '../../modules/prediction/routes'
 import { historicalRoutes } from '../../modules/historical/routes'
 import { simulatorRoutes } from '../../modules/simulator/routes'
-import { recommendationRoutes } from '../../modules/recommendation/routes'
+import { campaignRoutes } from '../../modules/campaigns/routes'
 import { reportsRoutes } from '../../modules/reports/routes'
 import { alertsRoutes } from '../../modules/alerts/routes'
 import { AppShell } from '../../shared/layouts/AppShell'
@@ -19,8 +19,8 @@ export const privateRoutes = [
           ...dashboardRoutes,
           ...predictionRoutes,
           ...historicalRoutes,
+          ...campaignRoutes,
           ...simulatorRoutes,
-          ...recommendationRoutes,
           ...reportsRoutes,
           ...alertsRoutes,
         ],
@@ -28,7 +28,7 @@ export const privateRoutes = [
     ],
   },
   {
-    element: <ProtectedRoute allowedRoles={["admin"]} />,
+    element: <ProtectedRoute />,
     children: [
       {
         element: <AppShell />,
