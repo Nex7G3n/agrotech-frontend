@@ -6,20 +6,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
-
-const roles = [
-  { id: 'productor', emoji: '🌾', label: 'Productor' },
-  { id: 'asesor', emoji: '👨‍💼', label: 'Asesor' },
-  { id: 'admin', emoji: '⚙️', label: 'Administrador' },
-]
 
 export function LoginPage() {
   const navigate = useNavigate()
   const { login } = useAuth()
   const [form, setForm] = useState({ email: '', password: '' })
   const [keepSession, setKeepSession] = useState(true)
-  const [selectedRole, setSelectedRole] = useState('productor')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
 
@@ -116,34 +108,6 @@ export function LoginPage() {
                   {loading ? 'Ingresando...' : '🔑 Ingresar al sistema'}
                 </Button>
 
-                <div className="h-px bg-border" />
-
-                <p className="text-xs font-semibold">Selecciona tu rol de acceso</p>
-                <div className="grid grid-cols-3 gap-2.5">
-                  {roles.map((role) => (
-                    <button
-                      type="button"
-                      key={role.id}
-                      onClick={() => setSelectedRole(role.id)}
-                      className={cn(
-                        'rounded-lg border-[1.5px] border-input bg-card px-2.5 py-3.5 text-center transition-all hover:border-ag-green-200 hover:bg-ag-green-50',
-                        selectedRole === role.id &&
-                          'border-primary bg-ag-green-50 shadow-[0_0_0_3px_rgba(29,158,117,0.15)]'
-                      )}
-                    >
-                      <div className="text-2xl mb-1.5">{role.emoji}</div>
-                      <div className="text-xs font-medium text-muted-foreground">{role.label}</div>
-                    </button>
-                  ))}
-                </div>
-
-                <div className="flex gap-2 items-start rounded-(--radius) border border-ag-green-100 bg-ag-green-50 px-3.5 py-2.5">
-                  <span className="text-base">🛡️</span>
-                  <p className="text-[11px] leading-relaxed text-ag-green-600">
-                    Acceso seguro con autenticación por rol. Cada perfil tiene permisos diferenciados según sus
-                    responsabilidades en el sistema.
-                  </p>
-                </div>
               </form>
             </CardContent>
           </Card>
