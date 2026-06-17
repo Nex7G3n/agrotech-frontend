@@ -9,8 +9,8 @@ const navItems = [
   { to: '/prediction', label: 'F-03 Predicción' },
   { to: '/historical', label: 'F-04 Histórico' },
   { to: '/campaigns', label: 'Campañas' },
-  { to: '/simulator', label: 'F-05 Simulador' },
-  { to: '/control-cases', label: 'Centro de control' },
+  { to: '/simulator', label: 'Calculo de rentabilidad' },
+  { to: '/control-cases', label: 'Simulador campañas' },
   { to: '/reports', label: 'F-07 Reportes' },
   { to: '/alerts', label: 'F-08 Alertas' },
 ]
