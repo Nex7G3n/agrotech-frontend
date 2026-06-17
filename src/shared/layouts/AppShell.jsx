@@ -1,11 +1,12 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { Users } from 'lucide-react'
 import { useAuth } from '../../modules/auth/context/AuthContext'
+import { AuthSessionBridge } from '../../modules/auth/components/AuthSessionBridge'
 import { cn } from '@/lib/utils'
 
 const navItems = [
   { to: '/dashboard', label: 'Inicio' },
-  { to: '/admin/users', label: 'Usuarios', icon: Users, badge: 'F-02' },
+  { to: '/admin/users', label: 'Usuarios', icon: Users, badge: 'F-02', adminOnly: true },
   { to: '/prediction', label: 'F-03 Predicción' },
   { to: '/historical', label: 'F-04 Histórico' },
   { to: '/campaigns', label: 'Campañas' },
@@ -17,14 +18,17 @@ const navItems = [
 
 export function AppShell() {
   const navigate = useNavigate()
-  const { user, role, logout } = useAuth()
+  const { user, role, logout, isAdmin } = useAuth()
 
   const handleLogout = () => {
     logout()
     navigate('/login', { replace: true })
   }
 
-  const visibleItems = navItems.filter((item) => !item.role || item.role === role)
+  const visibleItems = navItems.filter((item) => {
+    if (item.adminOnly && !isAdmin) return false
+    return !item.role || item.role === role
+  })
   const initials = (user?.name || 'Usuario')
     .split(' ')
     .map((part) => part[0])
@@ -34,7 +38,8 @@ export function AppShell() {
 
   return (
     <div className="min-h-screen bg-background font-sans text-foreground lg:flex">
-      <aside className="sticky top-0 z-50 flex w-full flex-col border-b border-border bg-card lg:h-screen lg:w-72 lg:border-b-0 lg:border-r">
+      <AuthSessionBridge />
+      <aside className="sticky top-0 z-50 flex w-full max-h-screen flex-col border-b border-border bg-card lg:h-screen lg:w-72 lg:max-h-none lg:border-b-0 lg:border-r">
         <div className="flex items-center gap-3 border-b border-border px-6 py-5">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-ag-green-600 text-lg text-white">🌿</div>
           <div>
@@ -43,9 +48,9 @@ export function AppShell() {
           </div>
         </div>
 
-        <div className="px-4 pt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Navegación</div>
+        <div className="shrink-0 px-4 pt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Navegación</div>
 
-        <nav className="flex gap-2 overflow-x-auto px-4 py-3 lg:flex-1 lg:flex-col lg:overflow-visible">
+        <nav className="nav-scroll flex min-h-0 shrink gap-2 overflow-x-auto px-4 py-3 lg:flex-1 lg:flex-col lg:overflow-x-hidden lg:overflow-y-auto">
           {visibleItems.map((item) => (
             <NavLink
               key={item.to}
@@ -68,7 +73,7 @@ export function AppShell() {
           ))}
         </nav>
 
-        <div className="hidden border-t border-border p-4 lg:block">
+        <div className="hidden shrink-0 border-t border-border p-4 lg:block">
           <div className="rounded-2xl border border-border bg-secondary p-3">
             <div className="mb-3 flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ag-green-600 text-[11px] font-semibold text-white">{initials}</div>
@@ -92,7 +97,7 @@ export function AppShell() {
           </button>
         </div>
 
-        <div className="border-t border-border p-4 lg:hidden">
+        <div className="shrink-0 border-t border-border p-4 lg:hidden">
           <div className="flex items-center gap-3 rounded-2xl border border-border bg-secondary px-3 py-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ag-green-600 text-[11px] font-semibold text-white">{initials}</div>
             <div className="min-w-0 flex-1">

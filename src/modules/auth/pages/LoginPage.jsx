@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -16,6 +16,8 @@ const roles = [
 
 export function LoginPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const sessionExpired = searchParams.get('expired') === '1'
   const { login } = useAuth()
   const [form, setForm] = useState({ email: '', password: '' })
   const [keepSession, setKeepSession] = useState(true)
@@ -109,6 +111,12 @@ export function LoginPage() {
                     ¿Olvidaste tu contraseña?
                   </a>
                 </div>
+
+                {sessionExpired ? (
+                  <p className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                    Tu sesión expiró. Vuelve a iniciar sesión para continuar.
+                  </p>
+                ) : null}
 
                 {error ? <p className="text-xs text-ag-red-600">{error}</p> : null}
 
