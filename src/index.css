@@ -203,3 +203,19 @@ input {
     @apply font-sans;
   }
 }
+
+.nav-scroll {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.nav-scroll::-webkit-scrollbar {
+  height: 6px;
+  width: 6px;
+}
+
+.nav-scroll::-webkit-scrollbar-thumb {
+  background: color-mix(in oklab, var(--border) 70%, var(--foreground));
+  border-radius: 999px;
+}

@@ -1,42 +1,93 @@
-import { useState } from 'react'
-import { CalendarDays, Edit3, Plus, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { AlertCircle, CalendarDays, Edit3, Loader2, Plus, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { profitabilityService } from '@/modules/profitability/services/profitabilityService'
 
-const INITIAL_CAMPAIGNS = [
-  { id: 'camp-2026-q2', name: 'Campaña 2026 - Q2', region: 'La Libertad', district: 'Virú', status: 'Activa', area: 5, start: '2026-04-01', end: '2026-06-30' },
-  { id: 'camp-2026-q3', name: 'Campaña 2026 - Q3', region: 'Piura', district: 'Tambogrande', status: 'Planificada', area: 8, start: '2026-07-01', end: '2026-09-30' },
-]
+const EMPTY_DRAFT = {
+  name: 'Nueva campaña',
+  region: 'LA LIBERTAD',
+  district: 'VIRU',
+  status: 'Planificada',
+  area_ha: 4,
+  start_date: '2026-01-01',
+  end_date: '2026-03-31',
+}
 
 export function CampaignsPage() {
-  const [campaigns, setCampaigns] = useState(INITIAL_CAMPAIGNS)
-  const [draft, setDraft] = useState(INITIAL_CAMPAIGNS[0])
-  const [editingId, setEditingId] = useState(INITIAL_CAMPAIGNS[0].id)
+  const [campaigns, setCampaigns] = useState([])
+  const [draft, setDraft] = useState(EMPTY_DRAFT)
+  const [editingId, setEditingId] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState('')
 
-  const saveCampaign = () => {
-    setCampaigns((current) => {
-      if (current.some((item) => item.id === editingId)) {
-        return current.map((item) => (item.id === editingId ? { ...draft, id: editingId } : item))
+  const load = async () => {
+    setLoading(true)
+    try {
+      const data = await profitabilityService.listCampaigns()
+      setCampaigns(data)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    load()
+  }, [])
+
+  const setField = (key, value) => setDraft((current) => ({ ...current, [key]: value }))
+
+  const saveCampaign = async () => {
+    setSaving(true)
+    setError('')
+    try {
+      const payload = { ...draft, area_ha: Number(draft.area_ha) }
+      if (editingId) {
+        await profitabilityService.updateCampaign(editingId, payload)
+      } else {
+        await profitabilityService.createCampaign(payload)
       }
-
-      return [...current, { ...draft, id: `camp-${Date.now()}` }]
-    })
+      await load()
+      newCampaign()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
   const newCampaign = () => {
     setEditingId(null)
-    setDraft({ id: '', name: 'Nueva campaña', region: 'La Libertad', district: 'Virú', status: 'Planificada', area: 4, start: '2026-01-01', end: '2026-03-31' })
+    setDraft(EMPTY_DRAFT)
   }
 
   const editCampaign = (campaign) => {
     setEditingId(campaign.id)
-    setDraft(campaign)
+    setDraft({
+      name: campaign.name,
+      region: campaign.region,
+      district: campaign.district,
+      status: campaign.status,
+      area_ha: campaign.area_ha,
+      start_date: campaign.start_date || '',
+      end_date: campaign.end_date || '',
+    })
   }
 
-  const removeCampaign = (id) => {
-    setCampaigns((current) => current.filter((item) => item.id !== id))
+  const removeCampaign = async (id) => {
+    setError('')
+    try {
+      await profitabilityService.deleteCampaign(id)
+      if (editingId === id) newCampaign()
+      await load()
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   return (
@@ -44,8 +95,14 @@ export function CampaignsPage() {
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-6 py-2.5">
         <span className="rounded-md border border-ag-green-100 bg-ag-green-50 px-2.5 py-1 font-mono text-[11px] font-medium text-ag-green-600">Campañas</span>
         <span className="text-sm font-medium text-foreground">CRUD de campañas</span>
-        <span className="ml-auto text-xs text-muted-foreground">Administra campañas simuladas para guardar escenarios</span>
+        <span className="ml-auto text-xs text-muted-foreground">Administra campañas guardadas en la base de datos</span>
       </div>
+
+      {error ? (
+        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">
+          <AlertCircle className="h-4 w-4" />{error}
+        </div>
+      ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[0.85fr_1.15fr]">
         <Card className="border-ag-green-100 bg-gradient-to-br from-ag-green-50 to-white">
@@ -58,18 +115,20 @@ export function CampaignsPage() {
               <div className="rounded-xl bg-ag-green-100 p-3 text-ag-green-700"><CalendarDays className="h-5 w-5" /></div>
             </div>
 
-            <Field label="Nombre" value={draft.name} onChange={(value) => setDraft((current) => ({ ...current, name: value }))} />
+            <Field label="Nombre" value={draft.name} onChange={(value) => setField('name', value)} />
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Región" value={draft.region} onChange={(value) => setDraft((current) => ({ ...current, region: value }))} />
-              <Field label="Distrito" value={draft.district} onChange={(value) => setDraft((current) => ({ ...current, district: value }))} />
-              <Field label="Área (ha)" value={draft.area} onChange={(value) => setDraft((current) => ({ ...current, area: Number(value) }))} />
-              <Field label="Estado" value={draft.status} onChange={(value) => setDraft((current) => ({ ...current, status: value }))} />
-              <Field label="Inicio" value={draft.start} onChange={(value) => setDraft((current) => ({ ...current, start: value }))} />
-              <Field label="Fin" value={draft.end} onChange={(value) => setDraft((current) => ({ ...current, end: value }))} />
+              <Field label="Región" value={draft.region} onChange={(value) => setField('region', value)} />
+              <Field label="Provincia / Distrito" value={draft.district} onChange={(value) => setField('district', value)} />
+              <Field label="Área (ha)" type="number" value={draft.area_ha} onChange={(value) => setField('area_ha', value)} />
+              <Field label="Estado" value={draft.status} onChange={(value) => setField('status', value)} />
+              <Field label="Inicio" type="date" value={draft.start_date} onChange={(value) => setField('start_date', value)} />
+              <Field label="Fin" type="date" value={draft.end_date} onChange={(value) => setField('end_date', value)} />
             </div>
 
             <div className="flex flex-wrap gap-2">
-              <Button onClick={saveCampaign} className="gap-2"><Edit3 className="h-4 w-4" />Guardar</Button>
+              <Button onClick={saveCampaign} disabled={saving} className="gap-2">
+                {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Edit3 className="h-4 w-4" />}Guardar
+              </Button>
               <Button variant="secondary" onClick={newCampaign} className="gap-2"><Plus className="h-4 w-4" />Nueva</Button>
             </div>
           </CardContent>
@@ -79,7 +138,7 @@ export function CampaignsPage() {
           <CardContent className="gap-4 p-6">
             <div>
               <h3 className="text-base font-semibold text-foreground">Campañas registradas</h3>
-              <p className="text-xs text-muted-foreground">Mock CRUD, sin persistencia real.</p>
+              <p className="text-xs text-muted-foreground">Persistidas en la base de datos del backend.</p>
             </div>
             <div className="overflow-hidden rounded-xl border border-border">
               <table className="w-full text-left text-sm">
@@ -87,19 +146,25 @@ export function CampaignsPage() {
                   <tr><th className="px-4 py-3">Campaña</th><th className="px-4 py-3">Ubicación</th><th className="px-4 py-3">Estado</th><th className="px-4 py-3">Acciones</th></tr>
                 </thead>
                 <tbody className="divide-y divide-border bg-card">
-                  {campaigns.map((campaign) => (
-                    <tr key={campaign.id}>
-                      <td className="px-4 py-4"><div className="font-medium text-foreground">{campaign.name}</div><div className="text-xs text-muted-foreground">{campaign.start} / {campaign.end}</div></td>
-                      <td className="px-4 py-4 text-muted-foreground">{campaign.region} · {campaign.district}</td>
-                      <td className="px-4 py-4"><span className="rounded-full bg-ag-green-50 px-2.5 py-1 text-xs font-medium text-ag-green-700">{campaign.status}</span></td>
-                      <td className="px-4 py-4">
-                        <div className="flex gap-2">
-                          <Button variant="secondary" size="sm" onClick={() => editCampaign(campaign)}>Editar</Button>
-                          <Button variant="secondary" size="sm" className="text-red-600" onClick={() => removeCampaign(campaign.id)}><Trash2 className="h-4 w-4" /></Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
+                  {loading ? (
+                    <tr><td colSpan={4} className="px-4 py-8 text-center text-muted-foreground"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></td></tr>
+                  ) : campaigns.length === 0 ? (
+                    <tr><td colSpan={4} className="px-4 py-8 text-center text-sm text-muted-foreground">No hay campañas. Crea la primera con el formulario.</td></tr>
+                  ) : (
+                    campaigns.map((campaign) => (
+                      <tr key={campaign.id}>
+                        <td className="px-4 py-4"><div className="font-medium text-foreground">{campaign.name}</div><div className="text-xs text-muted-foreground">{campaign.start_date || '—'} / {campaign.end_date || '—'}</div></td>
+                        <td className="px-4 py-4 text-muted-foreground">{campaign.region} · {campaign.district}</td>
+                        <td className="px-4 py-4"><span className="rounded-full bg-ag-green-50 px-2.5 py-1 text-xs font-medium text-ag-green-700">{campaign.status}</span></td>
+                        <td className="px-4 py-4">
+                          <div className="flex gap-2">
+                            <Button variant="secondary" size="sm" onClick={() => editCampaign(campaign)}>Editar</Button>
+                            <Button variant="secondary" size="sm" className="text-red-600" onClick={() => removeCampaign(campaign.id)}><Trash2 className="h-4 w-4" /></Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -110,11 +175,11 @@ export function CampaignsPage() {
   )
 }
 
-function Field({ label, value, onChange }) {
+function Field({ label, value, onChange, type = 'text' }) {
   return (
     <div className="space-y-1.5">
       <label className="text-xs font-medium text-muted-foreground">{label}</label>
-      <Input value={value} onChange={(event) => onChange(event.target.value)} />
+      <Input type={type} value={value} onChange={(event) => onChange(event.target.value)} />
     </div>
   )
 }

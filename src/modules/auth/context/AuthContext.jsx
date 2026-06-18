@@ -12,6 +12,16 @@ export function AuthProvider({ children }) {
   })
   const [loading, setLoading] = useState(Boolean(token))
 
+  const logout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('role')
+    localStorage.removeItem('user')
+    setToken(null)
+    setRole(null)
+    setUser(null)
+    setLoading(false)
+  }
+
   useEffect(() => {
     if (!token) return
 
@@ -56,18 +66,8 @@ export function AuthProvider({ children }) {
     return authResponse
   }
 
-  const logout = () => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('role')
-    localStorage.removeItem('user')
-    setToken(null)
-    setRole(null)
-    setUser(null)
-    setLoading(false)
-  }
-
   return (
-    <AuthContext.Provider value={{ token, role, user, loading, login, register, logout, isAuthenticated: Boolean(token) }}>
+    <AuthContext.Provider value={{ token, role, user, loading, login, register, logout, isAuthenticated: Boolean(token), isAdmin: Boolean(user?.is_admin || role === 'admin') }}>
       {children}
     </AuthContext.Provider>
   )

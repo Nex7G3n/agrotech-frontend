@@ -16,8 +16,11 @@ function getInitials(name = '') {
 
 function formatDate(iso) {
   if (!iso) return '—'
-  return new Date(iso).toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
+  const date = new Date(String(iso).replace(' ', 'T'))
+  if (isNaN(date.getTime())) return '—'
+  return date.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' })
 }
+
 
 export function UsersPage() {
   const [users, setUsers] = useState([])
@@ -91,7 +94,7 @@ export function UsersPage() {
       <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-card px-6 py-2.5">
         <span className="rounded-md border border-ag-green-100 bg-ag-green-50 px-2.25 py-0.75 font-mono text-[11px] font-medium text-ag-green-600">F-02</span>
         <span className="text-sm font-medium text-foreground">Gestión de usuarios</span>
-        <span className="ml-auto text-xs text-muted-foreground">Permite crear, listar y editar usuarios del sistema</span>
+        <span className="ml-auto text-xs text-muted-foreground">Listado conectado al backend · editar rol y estado</span>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

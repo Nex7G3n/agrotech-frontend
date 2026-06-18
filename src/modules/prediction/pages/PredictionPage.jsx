@@ -37,6 +37,18 @@ const MODEL_OPTIONS = [
   { id: 'lstm', label: 'LSTM', color: '#EF9F27' },
 ]
 
+const HORIZON_OPTIONS = [
+  { value: 4, label: '4 sem.' },
+  { value: 6, label: '6 sem.' },
+  { value: 8, label: '8 sem.' },
+  { value: 12, label: '12 sem.' },
+  { value: 16, label: '16 sem.' },
+  { value: 24, label: '24 sem.' },
+  { value: 26, label: '6 meses' },
+  { value: 52, label: '1 año' },
+]
+
+const HORIZON_LABELS = Object.fromEntries(HORIZON_OPTIONS.map((item) => [item.value, item.label]))
 const FALLBACK_DESTINATIONS = ['UNITED STATES', 'NETHERLANDS', 'SPAIN', 'CHINA', 'UNITED KINGDOM']
 const FALLBACK_SEASONS = ['Invierno', 'Otoño', 'Primavera', 'Verano']
 
@@ -213,7 +225,7 @@ export function PredictionPage() {
     <PagePlaceholder
       id="F-03"
       title="Modelo predictivo de precios FOB"
-      description="Comparacion de SARIMAX, SVR y LSTM para horizontes de 4, 6 y 8 semanas"
+      description="Comparacion de SARIMAX, SVR y LSTM para horizontes de semanas hasta 1 ano"
     >
       <div className="flex flex-col gap-4">
         <section className="grid gap-4 lg:grid-cols-[1fr_1.25fr]">
@@ -243,6 +255,16 @@ export function PredictionPage() {
         ) : null}
 
         <ForecastChart result={result} currentPrice={Number(form.current_price)} />
+
+        {result?.historical_comparison ? (
+          <HistoricalComparisonPanel comparison={result.historical_comparison} />
+        ) : null}
+
+        <ModelMetricsPanel modelStatus={modelStatus} />
+
+        {result?.models?.some((item) => item.status !== 'ok' && item.error_analysis?.length) ? (
+          <ErrorAnalysisPanel models={result.models} />
+        ) : null}
 
         <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
           <ModelComparison result={result} modelMap={modelMap} />
@@ -282,7 +304,7 @@ function PriceSummary({ result, currentPrice, horizon, loading }) {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <MetricTile label={`Proyeccion ${horizon} sem.`} value={loading ? '...' : `${formatMoney(finalPrice)}/kg`} />
+          <MetricTile label={`Proyeccion ${HORIZON_LABELS[horizon] || `${horizon} sem.`}`} value={loading ? '...' : `${formatMoney(finalPrice)}/kg`} />
           <MetricTile label="Confianza" value={loading ? '...' : formatPercent(result?.confidence)} />
           <MetricTile label="Tendencia" value={loading ? '...' : trendLabel(trend)} />
         </div>
@@ -383,22 +405,17 @@ function ControlPanel({
 
         <div className="grid gap-3 md:grid-cols-[0.85fr_1.15fr]">
           <div>
-            <div className="mb-2 text-xs font-semibold text-foreground">Horizonte</div>
-            <div className="grid grid-cols-3 rounded-lg border border-border bg-secondary p-1">
-              {[4, 6, 8].map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => onHorizonChange(item)}
-                  className={cn(
-                    'h-8 rounded-md text-xs font-semibold transition-colors',
-                    horizon === item ? 'bg-card text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground'
-                  )}
-                >
-                  {item} sem.
-                </button>
+            <div className="mb-2 text-xs font-semibold text-foreground">Horizonte predictivo</div>
+            <select
+              className="flex h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm text-foreground outline-none focus-visible:border-primary"
+              value={horizon}
+              onChange={(event) => onHorizonChange(Number(event.target.value))}
+            >
+              {HORIZON_OPTIONS.map((item) => (
+                <option key={item.value} value={item.value}>{item.label}</option>
               ))}
-            </div>
+            </select>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">Hasta 52 semanas (1 ano). Horizontes largos aumentan la incertidumbre.</p>
           </div>
 
           <div>
@@ -631,6 +648,161 @@ function ModelComparison({ result, modelMap }) {
               )}
             </tbody>
           </table>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ModelMetricsPanel({ modelStatus }) {
+  if (!modelStatus?.length) return null
+
+  return (
+    <Card className="border-border">
+      <CardContent>
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-primary" />
+          <h2 className="text-base font-semibold text-foreground">Metricas de evaluacion (hold-out)</h2>
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">MAE y RMSE en US$/kg sobre el conjunto de prueba semanal FOB.</p>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {modelStatus.map((item) => {
+            const metrics = item.metadata?.metrics || {}
+            return (
+              <div key={item.model} className="rounded-xl border border-border bg-secondary/40 px-4 py-3">
+                <p className="text-sm font-semibold text-foreground">{item.label}</p>
+                <p className="mt-1 text-[11px] text-muted-foreground">{item.available ? 'Disponible' : 'No disponible'}</p>
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <p className="text-muted-foreground">MAE</p>
+                    <p className="font-mono font-semibold text-foreground">{metrics.mae != null ? metrics.mae.toFixed(3) : 'N/D'}</p>
+                  </div>
+                  <div>
+                    <p className="text-muted-foreground">RMSE</p>
+                    <p className="font-mono font-semibold text-foreground">{metrics.rmse != null ? metrics.rmse.toFixed(3) : 'N/D'}</p>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function ErrorAnalysisPanel({ models }) {
+  const failed = models.filter((item) => item.status !== 'ok' && item.error_analysis?.length)
+
+  if (!failed.length) return null
+
+  return (
+    <Card className="border-amber-200 bg-amber-50/40">
+      <CardContent>
+        <div className="flex items-center gap-2">
+          <AlertCircle className="h-4 w-4 text-amber-600" />
+          <h2 className="text-base font-semibold text-foreground">Analisis de errores</h2>
+        </div>
+        <div className="mt-3 space-y-3">
+          {failed.map((item) => (
+            <div key={item.model} className="rounded-xl border border-amber-200 bg-white/80 px-4 py-3">
+              <p className="text-sm font-semibold text-foreground">{item.label}</p>
+              <ul className="mt-2 space-y-1.5 text-sm text-amber-900">
+                {item.error_analysis.map((line) => (
+                  <li key={line} className="leading-relaxed">• {line}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
+function HistoricalComparisonPanel({ comparison }) {
+  const rows = [
+    {
+      label: 'Precio predicho (consenso)',
+      value: comparison.precio_predicho_usd_kg,
+      delta: comparison.variacion_predicho_vs_promedio_mes_pct,
+      ref: `vs prom. ${comparison.mes_referencia}`,
+    },
+    {
+      label: 'Precio actual (último FOB)',
+      value: comparison.precio_actual_usd_kg,
+      delta: comparison.variacion_actual_vs_promedio_mes_pct,
+      ref: `vs prom. ${comparison.mes_referencia}`,
+    },
+    {
+      label: `Promedio histórico de ${comparison.mes_referencia}`,
+      value: comparison.promedio_historico_mes_usd_kg,
+      delta: null,
+      ref: `${comparison.anios_con_datos_mes} años con datos`,
+    },
+    {
+      label: 'Promedio móvil 12 meses',
+      value: comparison.promedio_12_meses_usd_kg,
+      delta: comparison.variacion_predicho_vs_promedio_12m_pct,
+      ref: 'vs predicho',
+    },
+    {
+      label: `Mismo mes ${comparison.fecha_objetivo?.slice?.(0, 4) ? Number(comparison.fecha_objetivo.slice(0, 4)) - 1 : 'año ant.'}`,
+      value: comparison.promedio_mismo_mes_anio_anterior_usd_kg,
+      delta: null,
+      ref: 'año anterior',
+    },
+  ].filter((row) => row.value != null)
+
+  return (
+    <Card className="border-ag-green-100">
+      <CardContent>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-ag-green-600" />
+              <h2 className="text-base font-semibold text-foreground">Predicho vs histórico</h2>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {comparison.destino} · mes objetivo {comparison.mes_referencia} (horizonte de predicción)
+            </p>
+          </div>
+          {comparison.variacion_predicho_vs_actual_pct != null ? (
+            <span className={cn(
+              'rounded-full px-3 py-1 text-xs font-semibold',
+              comparison.variacion_predicho_vs_actual_pct >= 0 ? 'bg-ag-green-50 text-ag-green-700' : 'bg-red-50 text-red-600',
+            )}
+            >
+              Predicho {comparison.variacion_predicho_vs_actual_pct >= 0 ? '+' : ''}{comparison.variacion_predicho_vs_actual_pct}% vs actual
+            </span>
+          ) : null}
+        </div>
+
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {rows.map((row) => (
+            <div key={row.label} className="rounded-xl border border-border bg-secondary/40 px-4 py-3">
+              <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">{row.label}</p>
+              <p className="mt-1 font-mono text-xl font-semibold text-foreground">{formatMoney(row.value)}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {row.delta != null ? (
+                  <span className={row.delta >= 0 ? 'text-ag-green-600' : 'text-red-600'}>
+                    {row.delta >= 0 ? '+' : ''}{row.delta}% {row.ref}
+                  </span>
+                ) : (
+                  row.ref
+                )}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-4 space-y-2">
+          {(comparison.interpretacion || []).map((item) => (
+            <p key={item} className="rounded-lg border border-ag-green-100 bg-ag-green-50 px-3 py-2 text-sm leading-relaxed text-ag-green-800">
+              {item}
+            </p>
+          ))}
         </div>
       </CardContent>
     </Card>
