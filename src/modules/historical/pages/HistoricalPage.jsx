@@ -354,7 +354,7 @@ export function HistoricalPage() {
 
   return (
     <PagePlaceholder
-      id="F-04"
+      id="Histórico"
       title="Visualización de precios históricos"
       description="Gráficos interactivos de precios FOB desde 2018 con filtros por fecha y mercado"
     >

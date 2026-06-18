@@ -223,7 +223,7 @@ export function PredictionPage() {
 
   return (
     <PagePlaceholder
-      id="F-03"
+      id="Predicción"
       title="Modelo predictivo de precios FOB"
       description="Comparacion de SARIMAX, SVR y LSTM para horizontes de semanas hasta 1 ano"
     >
