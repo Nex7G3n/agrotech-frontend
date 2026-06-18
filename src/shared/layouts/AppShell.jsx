@@ -6,13 +6,13 @@ import { cn } from '@/lib/utils'
 
 const navItems = [
   { to: '/dashboard',      label: 'Inicio',                  icon: LayoutDashboard },
-  { to: '/admin/users',    label: 'Usuarios',                icon: Users,         badge: 'F-02', adminOnly: true },
-  { to: '/prediction',     label: 'Predicción',              icon: TrendingUp },
-  { to: '/historical',     label: 'Histórico',               icon: History },
-  { to: '/campaigns',      label: 'Campañas',                icon: Leaf },
-  { to: '/simulator',      label: 'Rentabilidad',            icon: DollarSign },
-  { to: '/control-cases',  label: 'Simulador de campañas',   icon: Target },
-  { to: '/reports',        label: 'Reportes',                icon: FileBarChart2 },
+  { to: '/admin/users',    label: 'Usuarios',                icon: Users,         adminOnly: true },
+  { to: '/simulator',      label: 'Rentabilidad',            icon: DollarSign,    badge: 'S-01' },
+  { to: '/control-cases',  label: 'Simulador de campañas',   icon: Target,        badge: 'S-02' },
+  { to: '/prediction',     label: 'Predicción',              icon: TrendingUp,    badge: 'S-03' },
+  { to: '/historical',     label: 'Histórico',               icon: History,       badge: 'S-04'   }, 
+  { to: '/reports',        label: 'Reportes',                icon: FileBarChart2, badge: 'S-05' },
+  { to: '/campaigns',      label: 'Campañas',                icon: Leaf,            },
 ]
 
 export function AppShell() {
@@ -49,25 +49,37 @@ export function AppShell() {
 
         <div className="shrink-0 px-4 pt-4 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Navegación</div>
 
-        <nav className="nav-scroll flex min-h-0 shrink gap-2 overflow-x-auto px-4 py-3 lg:flex-1 lg:flex-col lg:overflow-x-hidden lg:overflow-y-auto">
+        <nav className="nav-scroll flex min-h-0 shrink gap-0.5 overflow-x-auto px-3 py-2 lg:flex-1 lg:flex-col lg:overflow-x-hidden lg:overflow-y-auto">
           {visibleItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               className={({ isActive }) =>
                 cn(
-                  'flex items-center gap-3 whitespace-nowrap rounded-2xl border px-4 py-3 text-sm font-medium transition-all lg:w-full',
+                  'flex min-w-0 items-center gap-2.5 rounded-xl px-2.5 py-2 text-sm font-medium transition-all lg:w-full',
                   isActive
-                    ? 'border-ag-green-200 bg-ag-green-50 text-ag-green-700 shadow-sm'
-                    : 'border-border bg-background text-muted-foreground hover:border-ag-green-200 hover:bg-ag-green-50 hover:text-foreground'
+                    ? 'bg-ag-green-50 text-ag-green-700'
+                    : 'text-muted-foreground hover:bg-muted/60 hover:text-foreground'
                 )
               }
             >
-              <span className={cn('flex h-8 w-8 items-center justify-center rounded-xl', item.to === '/dashboard' ? 'bg-ag-green-100 text-ag-green-700' : 'bg-muted text-muted-foreground')}>
-                {item.icon ? <item.icon className="h-4 w-4" /> : <span className="h-2 w-2 rounded-full bg-current opacity-50" />}
-              </span>
-              <span className="flex-1 text-left">{item.label}</span>
-              {item.badge ? <span className="rounded-full bg-ag-green-100 px-2 py-1 text-[10px] font-semibold text-ag-green-700">{item.badge}</span> : null}
+              {({ isActive }) => (
+                <>
+                  <span className={cn(
+                    'flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors',
+                    isActive ? 'bg-ag-green-100 text-ag-green-700' : 'bg-muted text-muted-foreground'
+                  )}>
+                    {item.icon ? <item.icon className="h-3.5 w-3.5" /> : <span className="h-1.5 w-1.5 rounded-full bg-current" />}
+                  </span>
+                  <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                  {item.badge ? (
+                    <span className={cn(
+                      'shrink-0 rounded-md px-1.5 py-0.5 text-[10px] font-semibold',
+                      isActive ? 'bg-ag-green-100 text-ag-green-700' : 'bg-muted text-muted-foreground'
+                    )}>{item.badge}</span>
+                  ) : null}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
