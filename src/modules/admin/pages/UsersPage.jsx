@@ -3,7 +3,6 @@ import { BadgeCheck, Edit3, Mail, Search, Shield, UserPlus, Users, X } from 'luc
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Checkbox } from '@/components/ui/checkbox'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { usersService } from '../services/usersService'
@@ -29,7 +28,7 @@ export function UsersPage() {
   const [search, setSearch] = useState('')
   const [roleFilter, setRoleFilter] = useState('todos')
   const [editing, setEditing] = useState(null)
-  const [editForm, setEditForm] = useState({ role: '', is_active: true, is_admin: false })
+  const [editForm, setEditForm] = useState({ name: '', role: '' })
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState('')
 
@@ -47,7 +46,7 @@ export function UsersPage() {
 
   const openEdit = (user) => {
     setEditing(user)
-    setEditForm({ role: user.role, is_active: user.is_active, is_admin: user.is_admin })
+    setEditForm({ name: user.name, role: user.role })
     setSaveError('')
   }
 
@@ -228,14 +227,14 @@ export function UsersPage() {
                 </button>
               </div>
 
-              <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary p-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-ag-green-600 text-sm font-semibold text-white">
-                  {getInitials(editing.name)}
-                </div>
-                <div>
-                  <div className="font-medium text-foreground">{editing.name}</div>
-                  <div className="text-xs text-muted-foreground">Registrado el {formatDate(editing.created_at)}</div>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="edit-name">Nombre</Label>
+                <Input
+                  id="edit-name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
+                  placeholder="Nombre completo"
+                />
               </div>
 
               <div className="flex flex-col gap-1.5">
@@ -250,24 +249,6 @@ export function UsersPage() {
                     <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
                   ))}
                 </select>
-              </div>
-
-              <div className="flex flex-col gap-3 rounded-xl border border-border p-3">
-                <label className="flex cursor-pointer items-center justify-between gap-3">
-                  <span className="text-sm text-foreground">Usuario activo</span>
-                  <Checkbox
-                    checked={editForm.is_active}
-                    onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_active: Boolean(v) }))}
-                  />
-                </label>
-                <div className="h-px bg-border" />
-                <label className="flex cursor-pointer items-center justify-between gap-3">
-                  <span className="text-sm text-foreground">Administrador</span>
-                  <Checkbox
-                    checked={editForm.is_admin}
-                    onCheckedChange={(v) => setEditForm((f) => ({ ...f, is_admin: Boolean(v) }))}
-                  />
-                </label>
               </div>
 
               {saveError ? <p className="text-xs text-ag-red-600">{saveError}</p> : null}
