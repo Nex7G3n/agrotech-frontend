@@ -46,7 +46,7 @@ export function LoginPage() {
           className="h-full w-full object-cover"
         />
         {/* Gradiente oscuro sobre la imagen */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-black/10" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-black/10" />
 
         {/* Logo sobre la imagen */}
         <div className="absolute left-8 top-8 flex items-center gap-3">
