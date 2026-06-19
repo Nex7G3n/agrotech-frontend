@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertCircle, BrainCircuit, Loader2, Plus, Sparkles, Star, Trash2 } from 'lucide-react'
+import { AlertCircle, BrainCircuit, Loader2, Plus, Sparkles, Star, TrendingUp, Trash2 } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -72,6 +72,7 @@ export function SimulationCasesPage() {
   const [fobBands, setFobBands] = useState(null)
   const [suggestedBestId, setSuggestedBestId] = useState(null)
   const [error, setError] = useState('')
+  const [prediccionPreview, setPrediccionPreview] = useState(null)
 
   useEffect(() => {
     profitabilityService.getOptions().then(setOptions).catch((err) => setError(err.message))
@@ -113,7 +114,10 @@ export function SimulationCasesPage() {
   }, [selectedCampaign])
 
   const setField = (key, value) => setDraft((current) => ({ ...current, [key]: value }))
-  const setPredField = (key, value) => setPrediction((current) => ({ ...current, [key]: value }))
+  const setPredField = (key, value) => {
+    setPrediccionPreview(null)
+    setPrediction((current) => ({ ...current, [key]: value }))
+  }
 
   const addSimulation = async () => {
     if (!selectedCampaign) {
@@ -126,6 +130,7 @@ export function SimulationCasesPage() {
     }
     setSaving(true)
     setError('')
+    setPrediccionPreview(null)
     try {
       let precioFob = Number(draft.precio_fob_usd_kg)
       if (usePredictedFob) {
@@ -141,6 +146,7 @@ export function SimulationCasesPage() {
           reference_date: prediction.reference_date || undefined,
         })
         precioFob = preview.precio_fob_usado
+        setPrediccionPreview(preview.prediccion_resumen)
       }
 
       const payload = {
@@ -314,7 +320,7 @@ export function SimulationCasesPage() {
                 <input
                   type="checkbox"
                   checked={usePredictedFob}
-                  onChange={(e) => setUsePredictedFob(e.target.checked)}
+                  onChange={(e) => { setUsePredictedFob(e.target.checked); setPrediccionPreview(null) }}
                   className="h-4 w-4 rounded accent-ag-green-600"
                 />
                 Usar precio FOB proyectado
@@ -340,6 +346,30 @@ export function SimulationCasesPage() {
             <SelectField label="Tipo de conducción" value={draft.tipo_conduccion_cultivo} onChange={(v) => setField('tipo_conduccion_cultivo', v)} options={options?.tipos_conduccion} />
             <SelectField label="Sequía" value={draft.sequia} onChange={(v) => setField('sequia', v)} options={options?.sequia} />
             <SelectField label="Plagas/enfermedades" value={draft.plagas_enfermedades} onChange={(v) => setField('plagas_enfermedades', v)} options={options?.plagas_enfermedades} />
+            {prediccionPreview ? (
+              <div className="sm:col-span-2 lg:col-span-4 flex flex-wrap items-center gap-3 rounded-xl border border-ag-green-200 bg-ag-green-50 px-4 py-3">
+                <div className="rounded-full bg-ag-green-100 p-1.5 text-ag-green-700">
+                  <TrendingUp className="h-4 w-4" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-ag-green-600">Precio FOB proyectado</p>
+                  <p className="text-sm font-semibold text-ag-green-800">
+                    US$ {prediccionPreview.precio_fob_proyectado?.toFixed(3)}/kg
+                    {prediccionPreview.tendencia ? (
+                      <span className="ml-2 text-xs font-normal text-ag-green-600">· Tendencia: {prediccionPreview.tendencia}</span>
+                    ) : null}
+                    {prediccionPreview.confianza != null ? (
+                      <span className="ml-2 text-xs font-normal text-ag-green-600">· Confianza: {(prediccionPreview.confianza * 100).toFixed(0)}%</span>
+                    ) : null}
+                  </p>
+                  {prediccionPreview.modelos_usados?.length ? (
+                    <p className="mt-0.5 text-[10px] text-ag-green-500">
+                      Modelos: {prediccionPreview.modelos_usados.join(', ')} · {prediccionPreview.horizonte_semanas} sem. · {prediccionPreview.destino}
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+            ) : null}
             <div className="flex items-end">
               <Button onClick={addSimulation} disabled={saving || !selectedCampaign || (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date))} className="w-full gap-2">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Agregar
