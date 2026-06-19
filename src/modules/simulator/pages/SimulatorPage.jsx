@@ -89,6 +89,10 @@ export function SimulatorPage() {
   const updatePrediction = (key, value) => setPrediction((current) => ({ ...current, [key]: value }))
 
   const calculate = async () => {
+    if (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date)) {
+      setError('Completa destino, horizonte y fecha de referencia.')
+      return
+    }
     setLoading(true)
     setError('')
     try {
@@ -176,7 +180,7 @@ export function SimulatorPage() {
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <SelectField label="Destino exportación" value={prediction.destination} onChange={(v) => updatePrediction('destination', v)} options={predictOptions?.destinations} />
                     <SelectField label="Horizonte (semanas)" value={prediction.horizon} onChange={(v) => updatePrediction('horizon', v)} options={[4, 6, 8]} />
-                    <Field label="Fecha de referencia (opcional)" value={prediction.reference_date} onChange={(v) => updatePrediction('reference_date', v)} type="date" />
+                    <Field label="Fecha de referencia" value={prediction.reference_date} onChange={(v) => updatePrediction('reference_date', v)} type="date" required />
                   </div>
                 ) : (
                   <Field label="Precio FOB (US$/kg)" value={form.precio_fob_usd_kg} onChange={(v) => update('precio_fob_usd_kg', v)} type="number" />
@@ -192,7 +196,7 @@ export function SimulatorPage() {
               <SelectField label="Plagas/enfermedades" value={form.plagas_enfermedades} onChange={(v) => update('plagas_enfermedades', v)} options={options?.plagas_enfermedades} />
             </div>
 
-            <Button className="w-full gap-2" onClick={calculate} disabled={loading}>
+            <Button className="w-full gap-2" onClick={calculate} disabled={loading || (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date))}>
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               Calcular rentabilidad
             </Button>
@@ -344,11 +348,11 @@ export function SimulatorPage() {
   )
 }
 
-function Field({ label, value, onChange, type = 'text' }) {
+function Field({ label, value, onChange, type = 'text', required = false }) {
   return (
     <div className="space-y-1.5">
       <label className="text-xs font-medium text-ag-green-700">{label}</label>
-      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} className="border-ag-green-100 bg-white text-foreground" />
+      <Input type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} className="border-ag-green-100 bg-white text-foreground" />
     </div>
   )
 }

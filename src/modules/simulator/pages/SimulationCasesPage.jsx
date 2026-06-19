@@ -120,6 +120,10 @@ export function SimulationCasesPage() {
       setError('Crea o selecciona una campaña primero (módulo Campañas).')
       return
     }
+    if (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date)) {
+      setError('Completa destino, horizonte y fecha de referencia.')
+      return
+    }
     setSaving(true)
     setError('')
     try {
@@ -198,6 +202,10 @@ export function SimulationCasesPage() {
       setError('Crea o selecciona una campaña primero (módulo Campañas).')
       return
     }
+    if (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date)) {
+      setError('Completa destino, horizonte y fecha de referencia.')
+      return
+    }
     setAutoGenerating(true)
     setError('')
     try {
@@ -264,7 +272,7 @@ export function SimulationCasesPage() {
                 ))}
               </select>
             </div>
-            <Button onClick={generateAutoScenarios} disabled={autoGenerating || !selectedCampaign} className="gap-2">
+            <Button onClick={generateAutoScenarios} disabled={autoGenerating || !selectedCampaign || (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date))} className="gap-2">
               {autoGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Generar escenarios automáticos
             </Button>
@@ -315,7 +323,7 @@ export function SimulationCasesPage() {
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <SelectField label="Destino" value={prediction.destination} onChange={(v) => setPredField('destination', v)} options={predictOptions?.destinations} />
                   <SelectField label="Horizonte (sem.)" value={prediction.horizon} onChange={(v) => setPredField('horizon', v)} options={[4, 6, 8]} />
-                  <Field label="Fecha referencia (opcional)" type="date" value={prediction.reference_date} onChange={(v) => setPredField('reference_date', v)} />
+                  <Field label="Fecha de referencia" type="date" required value={prediction.reference_date} onChange={(v) => setPredField('reference_date', v)} />
                 </div>
               ) : (
                 <div className="mt-3">
@@ -333,7 +341,7 @@ export function SimulationCasesPage() {
             <SelectField label="Sequía" value={draft.sequia} onChange={(v) => setField('sequia', v)} options={options?.sequia} />
             <SelectField label="Plagas/enfermedades" value={draft.plagas_enfermedades} onChange={(v) => setField('plagas_enfermedades', v)} options={options?.plagas_enfermedades} />
             <div className="flex items-end">
-              <Button onClick={addSimulation} disabled={saving || !selectedCampaign} className="w-full gap-2">
+              <Button onClick={addSimulation} disabled={saving || !selectedCampaign || (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date))} className="w-full gap-2">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Agregar
               </Button>
             </div>
@@ -491,11 +499,11 @@ function ScenarioCard({ item, rank, tone, suggested, onMarkBest, onRemove }) {
   )
 }
 
-function Field({ label, value, onChange, type = 'text' }) {
+function Field({ label, value, onChange, type = 'text', required = false }) {
   return (
     <div className="space-y-1.5">
       <label className="text-xs font-medium text-muted-foreground">{label}</label>
-      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input type={type} required={required} value={value} onChange={(e) => onChange(e.target.value)} />
     </div>
   )
 }
