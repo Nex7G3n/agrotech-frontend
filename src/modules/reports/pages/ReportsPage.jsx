@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { AlertCircle, BarChart3, Download, Globe2, LineChart, Loader2, PieChart, RefreshCw, TrendingDown, TrendingUp } from 'lucide-react'
+import { AlertCircle, BarChart3, Globe2, LineChart, Loader2, PieChart, RefreshCw, TrendingDown, TrendingUp } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ShareResultsMenu } from '@/shared/components/ShareResultsMenu'
 import { historicalService } from '@/modules/historical/services/historicalService'
 import { reportsService } from '@/modules/reports/services/reportsService'
 
@@ -30,7 +31,6 @@ export function ReportsPage() {
   const [filters, setFilters] = useState({ yearFrom: '', yearTo: '', continent: 'Todos', destination: 'Todos' })
   const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [downloading, setDownloading] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -82,18 +82,6 @@ export function ReportsPage() {
       if (key === 'continent') next.destination = 'Todos'
       return next
     })
-  }
-
-  const downloadPdf = async () => {
-    setDownloading(true)
-    setError('')
-    try {
-      await reportsService.downloadCyclesPdf({ yearFrom: filters.yearFrom, yearTo: filters.yearTo, destination: filters.destination, continent: filters.continent })
-    } catch (err) {
-      setError(err.message || 'No se pudo descargar el PDF')
-    } finally {
-      setDownloading(false)
-    }
   }
 
   const monthlyByNum = useMemo(() => {
@@ -151,14 +139,10 @@ export function ReportsPage() {
                 {destinationsForContinent.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
               </select>
             </FilterField>
-            <div className="flex items-end gap-2">
-              <Button onClick={loadReport} disabled={loading} className="flex-1 gap-2">
+            <div className="flex items-end">
+              <Button onClick={loadReport} disabled={loading} className="w-full gap-2">
                 {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 Actualizar
-              </Button>
-              <Button variant="secondary" onClick={downloadPdf} disabled={downloading || !report} className="flex-1 gap-2" title={!report ? 'Genera el reporte primero' : undefined}>
-                {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-                PDF
               </Button>
             </div>
           </div>
@@ -166,6 +150,17 @@ export function ReportsPage() {
             <p className="text-xs text-muted-foreground">
               {report.summary.mercado_label} · Período {report.summary.periodo_label} · {report.summary.anos_analizados} años con datos
             </p>
+          ) : null}
+          {report ? (
+            <ShareResultsMenu
+              module="cycles"
+              buildPayload={() => ({
+                year_from: filters.yearFrom ? Number(filters.yearFrom) : undefined,
+                year_to: filters.yearTo ? Number(filters.yearTo) : undefined,
+                destination: filters.destination !== 'Todos' ? filters.destination : undefined,
+                continent: filters.continent !== 'Todos' ? filters.continent : undefined,
+              })}
+            />
           ) : null}
         </CardContent>
       </Card>

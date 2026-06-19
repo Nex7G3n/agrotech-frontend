@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { ShareResultsMenu } from '@/shared/components/ShareResultsMenu'
 import { profitabilityService } from '@/modules/profitability/services/profitabilityService'
 import { predictionService } from '@/modules/prediction/services/predictionService'
 
@@ -127,6 +128,25 @@ export function SimulatorPage() {
   }
 
   const RecIcon = result ? RECOMMENDATION_ICON[result.recomendacion] || Lightbulb : Lightbulb
+
+  const buildDeliveryPayload = () => {
+    const payload = {
+      ...form,
+      rendimiento_kg_ha: Number(form.rendimiento_kg_ha),
+      porcentaje_vendido: Number(form.porcentaje_vendido),
+      costo_produccion_usd_kg: Number(form.costo_produccion_usd_kg),
+      flete_usd_kg: Number(form.flete_usd_kg),
+      hectares: Number(form.hectares),
+      use_predicted_fob: usePredictedFob,
+      destination: prediction.destination,
+      season: prediction.season,
+      horizon: Number(prediction.horizon),
+      volume_exported: Number(prediction.volume_exported),
+      operations: Number(prediction.operations),
+    }
+    if (!usePredictedFob) payload.precio_fob_usd_kg = Number(form.precio_fob_usd_kg)
+    return payload
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -262,6 +282,13 @@ export function SimulatorPage() {
           </Card>
         )}
       </div>
+
+      {result ? (
+        <ShareResultsMenu
+          module={usePredictedFob ? 'profitability_prediction' : 'profitability'}
+          buildPayload={buildDeliveryPayload}
+        />
+      ) : null}
 
       {result ? (
         <Card className="overflow-hidden border-ag-green-100 bg-gradient-to-r from-ag-green-50 to-white">

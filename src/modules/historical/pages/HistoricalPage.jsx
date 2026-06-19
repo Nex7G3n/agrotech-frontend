@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { PagePlaceholder } from '@/shared/components/PagePlaceholder'
+import { ShareResultsMenu } from '@/shared/components/ShareResultsMenu'
 import { historicalService } from '../services/historicalService'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, Calendar, Globe, Award, ChevronUp, ChevronDown, Check, RotateCcw, AlertTriangle, HelpCircle, Map } from 'lucide-react'
@@ -418,6 +419,17 @@ export function HistoricalPage() {
           <RotateCcw className="h-4 w-4 text-muted-foreground" /> Limpiar
         </button>
       </div>
+
+      {!loading && comparisonData.length > 0 ? (
+        <ShareResultsMenu
+          module="historical"
+          buildPayload={() => ({
+            year: Number(filters.year),
+            destination: filters.destination !== 'Todos' ? filters.destination : undefined,
+            continent: filters.continent !== 'Todos' ? filters.continent : undefined,
+          })}
+        />
+      ) : null}
 
       {error && (
         <div className="bg-ag-red-50 border border-ag-red-100 text-ag-red-600 px-4 py-3 rounded-lg flex items-center gap-2 text-sm font-medium">

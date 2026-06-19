@@ -4,6 +4,7 @@ import { AlertCircle, BrainCircuit, Loader2, Plus, Sparkles, Star, Trash2 } from
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { ShareResultsMenu } from '@/shared/components/ShareResultsMenu'
 import { profitabilityService } from '@/modules/profitability/services/profitabilityService'
 import { predictionService } from '@/modules/prediction/services/predictionService'
 
@@ -290,6 +291,17 @@ export function SimulationCasesPage() {
         <Card><CardContent className="p-5"><p className="text-xs text-muted-foreground">Ganancia total</p><p className="text-2xl font-semibold text-ag-green-700">S/ {Math.round(totals.profit).toLocaleString('es-PE')}</p></CardContent></Card>
         <Card><CardContent className="p-5"><p className="text-xs text-muted-foreground">Mejor escenario</p><p className="text-2xl font-semibold">{totals.best ? totals.best.name : '—'}</p></CardContent></Card>
       </div>
+
+      {simulations.length > 0 && selectedCampaign ? (
+        <ShareResultsMenu
+          module="scenarios"
+          buildPayload={() => ({
+            campaign_id: Number(selectedCampaign),
+            fob_bands: fobBands,
+            suggested_best_id: suggestedBestId,
+          })}
+        />
+      ) : null}
 
       <Card className="border-ag-green-100 bg-gradient-to-br from-ag-green-50 to-white">
         <CardContent className="gap-4 p-6">

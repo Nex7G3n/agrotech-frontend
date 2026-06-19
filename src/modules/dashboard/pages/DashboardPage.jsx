@@ -4,6 +4,7 @@ import { AlertCircle, ArrowRight, BarChart3, CheckCircle2, Leaf, LineChart, Load
 
 import { useAuth } from '../../auth/context/AuthContext'
 import { Card, CardContent } from '@/components/ui/card'
+import { ShareResultsMenu } from '@/shared/components/ShareResultsMenu'
 import { systemService } from '@/shared/services/systemService'
 
 const STATUS_TONE = {
@@ -100,6 +101,14 @@ export function DashboardPage() {
                   </Link>
                 ))}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="gap-3 p-5">
+              <h3 className="text-sm font-semibold text-foreground">Informe integrado (demo tesis)</h3>
+              <p className="text-xs text-muted-foreground">PDF con predicción, rentabilidad y ciclos para UNITED STATES.</p>
+              <ShareResultsMenu module="demo" buildPayload={() => ({ destination: 'UNITED STATES', season: 'Invierno', horizon: 4 })} />
             </CardContent>
           </Card>
 

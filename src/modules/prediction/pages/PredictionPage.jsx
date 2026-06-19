@@ -29,6 +29,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { PagePlaceholder } from '@/shared/components/PagePlaceholder'
+import { ShareResultsMenu } from '@/shared/components/ShareResultsMenu'
 import { predictionService } from '../services/predictionService'
 
 const MODEL_OPTIONS = [
@@ -264,6 +265,20 @@ export function PredictionPage() {
 
         {result?.models?.some((item) => item.status !== 'ok' && item.error_analysis?.length) ? (
           <ErrorAnalysisPanel models={result.models} />
+        ) : null}
+
+        {result ? (
+          <ShareResultsMenu
+            module="prediction"
+            buildPayload={() => ({
+              ...form,
+              current_price: form.current_price === '' ? undefined : Number(form.current_price),
+              volume_exported: Number(form.volume_exported),
+              operations: Number(form.operations),
+              horizon,
+              models: selectedModels,
+            })}
+          />
         ) : null}
 
         <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
