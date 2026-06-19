@@ -39,24 +39,21 @@ const TARGET_LABELS = {
 const NEW_SIM = {
   name: 'Caso A',
   precio_fob_usd_kg: 2.0,
-  rendimiento_kg_ha: 8500,
-  porcentaje_vendido: 95,
-  costo_produccion_usd_kg: 0.85,
-  flete_usd_kg: 0.30,
+  costo_soles_kg: 4.0,
+  tipo_cambio: 3.75,
   region: 'LA LIBERTAD',
   provincia: 'VIRU',
   tipo_conduccion_cultivo: 'Homogeneo',
   sequia: 'No',
   plagas_enfermedades: 'No',
   hectares: 5,
+  margen_objetivo_soles: 0,
 }
 
 const PREDICTION_DEFAULTS = {
   destination: 'UNITED STATES',
-  season: 'Invierno',
   horizon: 4,
-  volume_exported: 18500,
-  operations: 128,
+  reference_date: '',
 }
 
 export function SimulationCasesPage() {
@@ -86,7 +83,6 @@ export function SimulationCasesPage() {
         setPrediction((current) => ({
           ...current,
           destination: data.destinations?.[0] || current.destination,
-          season: data.seasons?.[0] || current.season,
         }))
       })
       .catch(() => {})
@@ -131,17 +127,14 @@ export function SimulationCasesPage() {
       if (usePredictedFob) {
         const preview = await profitabilityService.calculateWithPrediction({
           ...draft,
-          rendimiento_kg_ha: Number(draft.rendimiento_kg_ha),
-          porcentaje_vendido: Number(draft.porcentaje_vendido),
-          costo_produccion_usd_kg: Number(draft.costo_produccion_usd_kg),
-          flete_usd_kg: Number(draft.flete_usd_kg),
+          costo_soles_kg: Number(draft.costo_soles_kg),
+          tipo_cambio: Number(draft.tipo_cambio),
           hectares: Number(draft.hectares),
+          margen_objetivo_soles: Number(draft.margen_objetivo_soles),
           use_predicted_fob: true,
           destination: prediction.destination,
-          season: prediction.season,
           horizon: Number(prediction.horizon),
-          volume_exported: Number(prediction.volume_exported),
-          operations: Number(prediction.operations),
+          reference_date: prediction.reference_date || undefined,
         })
         precioFob = preview.precio_fob_usado
       }
@@ -149,11 +142,10 @@ export function SimulationCasesPage() {
       const payload = {
         ...draft,
         precio_fob_usd_kg: precioFob,
-        rendimiento_kg_ha: Number(draft.rendimiento_kg_ha),
-        porcentaje_vendido: Number(draft.porcentaje_vendido),
-        costo_produccion_usd_kg: Number(draft.costo_produccion_usd_kg),
-        flete_usd_kg: Number(draft.flete_usd_kg),
+        costo_soles_kg: Number(draft.costo_soles_kg),
+        tipo_cambio: Number(draft.tipo_cambio),
         hectares: Number(draft.hectares),
+        margen_objetivo_soles: Number(draft.margen_objetivo_soles),
       }
       await profitabilityService.createSimulation(selectedCampaign, payload)
       await loadSimulations(selectedCampaign)
@@ -185,22 +177,19 @@ export function SimulationCasesPage() {
   }
 
   const buildBasePayload = () => ({
-    rendimiento_kg_ha: Number(draft.rendimiento_kg_ha),
-    porcentaje_vendido: Number(draft.porcentaje_vendido),
-    costo_produccion_usd_kg: Number(draft.costo_produccion_usd_kg),
-    flete_usd_kg: Number(draft.flete_usd_kg),
+    costo_soles_kg: Number(draft.costo_soles_kg),
+    tipo_cambio: Number(draft.tipo_cambio),
     region: draft.region,
     provincia: draft.provincia,
     tipo_conduccion_cultivo: draft.tipo_conduccion_cultivo,
     sequia: draft.sequia,
     plagas_enfermedades: draft.plagas_enfermedades,
     hectares: Number(draft.hectares),
+    margen_objetivo_soles: Number(draft.margen_objetivo_soles),
     use_predicted_fob: usePredictedFob,
     destination: prediction.destination,
-    season: prediction.season,
     horizon: Number(prediction.horizon),
-    volume_exported: Number(prediction.volume_exported),
-    operations: Number(prediction.operations),
+    reference_date: prediction.reference_date || undefined,
     ...(usePredictedFob ? {} : { precio_fob_usd_kg: Number(draft.precio_fob_usd_kg) }),
   })
 
@@ -281,7 +270,7 @@ export function SimulationCasesPage() {
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Genera Alto, Medio y Bajo con bandas FOB {usePredictedFob ? 'del consenso predictivo' : '±10% del precio manual'} y condiciones de riesgo diferenciadas.
+            Genera Alto, Medio y Bajo variando FOB, costo productivo, sequía y plagas según el contrato del modelo.
           </p>
         </CardContent>
       </Card>
@@ -325,8 +314,8 @@ export function SimulationCasesPage() {
               {usePredictedFob ? (
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <SelectField label="Destino" value={prediction.destination} onChange={(v) => setPredField('destination', v)} options={predictOptions?.destinations} />
-                  <SelectField label="Temporada" value={prediction.season} onChange={(v) => setPredField('season', v)} options={predictOptions?.seasons} />
-                  <Field label="Horizonte (sem.)" type="number" value={prediction.horizon} onChange={(v) => setPredField('horizon', v)} />
+                  <SelectField label="Horizonte (sem.)" value={prediction.horizon} onChange={(v) => setPredField('horizon', v)} options={[4, 6, 8]} />
+                  <Field label="Fecha referencia (opcional)" type="date" value={prediction.reference_date} onChange={(v) => setPredField('reference_date', v)} />
                 </div>
               ) : (
                 <div className="mt-3">
@@ -334,11 +323,10 @@ export function SimulationCasesPage() {
                 </div>
               )}
             </div>
-            <Field label="Rendimiento (kg/ha)" type="number" value={draft.rendimiento_kg_ha} onChange={(v) => setField('rendimiento_kg_ha', v)} />
-            <Field label="% vendido" type="number" value={draft.porcentaje_vendido} onChange={(v) => setField('porcentaje_vendido', v)} />
-            <Field label="Costo prod. (US$/kg)" type="number" value={draft.costo_produccion_usd_kg} onChange={(v) => setField('costo_produccion_usd_kg', v)} />
-            <Field label="Flete (US$/kg)" type="number" value={draft.flete_usd_kg} onChange={(v) => setField('flete_usd_kg', v)} />
+            <Field label="Costo productivo (S//kg)" type="number" value={draft.costo_soles_kg} onChange={(v) => setField('costo_soles_kg', v)} />
+            <Field label="Tipo de cambio (S//US$)" type="number" value={draft.tipo_cambio} onChange={(v) => setField('tipo_cambio', v)} />
             <Field label="Hectáreas" type="number" value={draft.hectares} onChange={(v) => setField('hectares', v)} />
+            <Field label="Ganancia mínima deseada (S/)" type="number" value={draft.margen_objetivo_soles} onChange={(v) => setField('margen_objetivo_soles', v)} />
             <SelectField label="Región" value={draft.region} onChange={(v) => setField('region', v)} options={options?.regions} />
             <SelectField label="Provincia" value={draft.provincia} onChange={(v) => setField('provincia', v)} options={options?.provincias} />
             <SelectField label="Tipo de conducción" value={draft.tipo_conduccion_cultivo} onChange={(v) => setField('tipo_conduccion_cultivo', v)} options={options?.tipos_conduccion} />
