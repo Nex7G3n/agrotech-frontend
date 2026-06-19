@@ -96,7 +96,7 @@ export function PredictionPage() {
 
   const runPrediction = async (formPayload) => {
     const payload = formPayload || form
-    if (!payload.destination || !horizon || !payload.reference_date) {
+    if (!payload.destination || !horizon) {
       setError('Completa destino, horizonte y fecha de referencia.')
       return
     }
@@ -277,7 +277,7 @@ function ControlPanel({
             <h2 className="text-base font-semibold text-foreground">Parametros predictivos</h2>
             <p className="text-xs text-muted-foreground">El histórico y las variables temporales se obtienen automáticamente.</p>
           </div>
-          <Button type="button" onClick={() => onRun()} disabled={loading || !form.destination || !horizon || !form.reference_date} size="sm">
+          <Button type="button" onClick={() => onRun()} disabled={loading || !form.destination || !horizon} size="sm">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             Ejecutar
           </Button>
@@ -293,9 +293,9 @@ function ControlPanel({
               ))}
             </Select>
           </Field>
-          <Field label="Fecha de referencia">
+          {/* <Field label="Fecha de referencia">
             <Input type="date" required value={form.reference_date} onChange={(event) => updateField('reference_date', event.target.value)} />
-          </Field>
+          </Field> */}
           <div>
             <div className="mb-2 text-xs font-semibold text-foreground">Horizonte predictivo</div>
             <select

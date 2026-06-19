@@ -124,7 +124,7 @@ export function SimulationCasesPage() {
       setError('Crea o selecciona una campaña primero (módulo Campañas).')
       return
     }
-    if (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date)) {
+    if (usePredictedFob && (!prediction.destination || !prediction.horizon)) {
       setError('Completa destino, horizonte y fecha de referencia.')
       return
     }
@@ -208,7 +208,7 @@ export function SimulationCasesPage() {
       setError('Crea o selecciona una campaña primero (módulo Campañas).')
       return
     }
-    if (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date)) {
+    if (usePredictedFob && (!prediction.destination || !prediction.horizon)) {
       setError('Completa destino, horizonte y fecha de referencia.')
       return
     }
@@ -278,7 +278,7 @@ export function SimulationCasesPage() {
                 ))}
               </select>
             </div>
-            <Button onClick={generateAutoScenarios} disabled={autoGenerating || !selectedCampaign || (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date))} className="gap-2">
+            <Button onClick={generateAutoScenarios} disabled={autoGenerating || !selectedCampaign || (usePredictedFob && (!prediction.destination || !prediction.horizon))} className="gap-2">
               {autoGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Generar escenarios automáticos
             </Button>
@@ -329,7 +329,7 @@ export function SimulationCasesPage() {
                 <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   <SelectField label="Destino" value={prediction.destination} onChange={(v) => setPredField('destination', v)} options={predictOptions?.destinations} />
                   <SelectField label="Horizonte (sem.)" value={prediction.horizon} onChange={(v) => setPredField('horizon', v)} options={[4, 6, 8]} />
-                  <Field label="Fecha de referencia" type="date" required value={prediction.reference_date} onChange={(v) => setPredField('reference_date', v)} />
+                  {/* <Field label="Fecha de referencia" type="date" required value={prediction.reference_date} onChange={(v) => setPredField('reference_date', v)} /> */}
                 </div>
               ) : (
                 <div className="mt-3">
@@ -371,7 +371,7 @@ export function SimulationCasesPage() {
               </div>
             ) : null}
             <div className="flex items-end">
-              <Button onClick={addSimulation} disabled={saving || !selectedCampaign || (usePredictedFob && (!prediction.destination || !prediction.horizon || !prediction.reference_date))} className="w-full gap-2">
+              <Button onClick={addSimulation} disabled={saving || !selectedCampaign || (usePredictedFob && (!prediction.destination || !prediction.horizon))} className="w-full gap-2">
                 {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}Agregar
               </Button>
             </div>
