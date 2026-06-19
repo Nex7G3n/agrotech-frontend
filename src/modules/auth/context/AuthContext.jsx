@@ -66,8 +66,14 @@ export function AuthProvider({ children }) {
     return authResponse
   }
 
+  const registerAdmin = async (payload) => {
+    const authResponse = await authService.registerAdmin(payload)
+    persistSession(authResponse)
+    return authResponse
+  }
+
   return (
-    <AuthContext.Provider value={{ token, role, user, loading, login, register, logout, isAuthenticated: Boolean(token), isAdmin: Boolean(user?.is_admin || role === 'admin') }}>
+    <AuthContext.Provider value={{ token, role, user, loading, login, register, registerAdmin, logout, isAuthenticated: Boolean(token), isAdmin: Boolean(user?.is_admin || role === 'admin') }}>
       {children}
     </AuthContext.Provider>
   )

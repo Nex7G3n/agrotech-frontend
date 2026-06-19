@@ -7,9 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import imgLogin from '@/assets/img-login.jpg'
 
-export function RegisterPage() {
+export function RegisterPage({ adminRegistration = false }) {
   const navigate = useNavigate()
-  const { register } = useAuth()
+  const { register, registerAdmin } = useAuth()
   const [form, setForm] = useState({ name: '', email: '', password: '', confirmPassword: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
@@ -30,7 +30,8 @@ export function RegisterPage() {
     }
     setLoading(true)
     try {
-      await register({ name: form.name, email: form.email, password: form.password })
+      const registerAccount = adminRegistration ? registerAdmin : register
+      await registerAccount({ name: form.name, email: form.email, password: form.password })
       navigate('/dashboard', { replace: true })
     } catch (err) {
       setError(err.message)
@@ -95,8 +96,14 @@ export function RegisterPage() {
 
         <div className="w-full max-w-sm">
           <div className="mb-8">
-            <h2 className="text-2xl font-bold text-foreground">Crear cuenta</h2>
-            <p className="mt-1.5 text-sm text-muted-foreground">Completa tus datos para registrarte</p>
+            <h2 className="text-2xl font-bold text-foreground">
+              {adminRegistration ? 'Crear administrador' : 'Crear cuenta'}
+            </h2>
+            <p className="mt-1.5 text-sm text-muted-foreground">
+              {adminRegistration
+                ? 'Completa los datos para crear una cuenta administrativa'
+                : 'Completa tus datos para registrarte'}
+            </p>
           </div>
 
           <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
@@ -192,7 +199,11 @@ export function RegisterPage() {
 
             <Button type="submit" className="mt-1 w-full gap-2" disabled={loading} size="lg">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {loading ? 'Creando cuenta...' : 'Crear cuenta'}
+              {loading
+                ? 'Creando cuenta...'
+                : adminRegistration
+                  ? 'Crear administrador'
+                  : 'Crear cuenta'}
             </Button>
           </form>
 
