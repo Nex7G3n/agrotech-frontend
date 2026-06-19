@@ -25,6 +25,9 @@ RUN printf 'server {\n\
     server_name _;\n\
     root /usr/share/nginx/html;\n\
     index index.html;\n\
+    location = /config.js {\n\
+        add_header Cache-Control "no-store";\n\
+    }\n\
     gzip on;\n\
     gzip_vary on;\n\
     gzip_types text/plain text/css application/json application/javascript text/xml application/xml application/xml+rss text/javascript;\n\
@@ -39,6 +42,8 @@ RUN printf 'server {\n\
 }\n' > /etc/nginx/conf.d/default.conf
 
 COPY --from=builder /app/dist /usr/share/nginx/html
+COPY 40-runtime-config.sh /docker-entrypoint.d/40-runtime-config.sh
+RUN chmod +x /docker-entrypoint.d/40-runtime-config.sh
 
 EXPOSE 80
 

@@ -1,6 +1,6 @@
 import { notifyUnauthorized } from './authSession'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
+import { API_URL } from '@/shared/api/apiConfig'
 
 function formatApiError(data) {
   if (!data?.detail) return 'Error de red'

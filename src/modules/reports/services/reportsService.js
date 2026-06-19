@@ -1,7 +1,7 @@
 import { httpClient } from '@/shared/api/httpClient'
 import { notifyUnauthorized } from '@/shared/api/authSession'
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
+import { API_URL } from '@/shared/api/apiConfig'
 
 function buildCyclesQuery({ yearFrom, yearTo, destination, continent } = {}) {
   const params = new URLSearchParams()
