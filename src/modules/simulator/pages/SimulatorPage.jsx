@@ -10,10 +10,8 @@ import { predictionService } from '@/modules/prediction/services/predictionServi
 
 const INITIAL_FORM = {
   precio_fob_usd_kg: 2.0,
-  rendimiento_kg_ha: 8500,
-  porcentaje_vendido: 95,
-  costo_produccion_usd_kg: 0.85,
-  flete_usd_kg: 0.30,
+  costo_soles_kg: 4.0,
+  tipo_cambio: 3.75,
   region: 'LA LIBERTAD',
   provincia: 'VIRU',
   tipo_conduccion_cultivo: 'Homogeneo',
@@ -24,10 +22,8 @@ const INITIAL_FORM = {
 
 const PREDICTION_DEFAULTS = {
   destination: 'UNITED STATES',
-  season: 'Invierno',
   horizon: 4,
-  volume_exported: 18500,
-  operations: 128,
+  reference_date: '',
 }
 
 const SCENARIO_TONE = {
@@ -81,13 +77,9 @@ export function SimulatorPage() {
       .getInputOptions()
       .then((data) => {
         setPredictOptions(data)
-        const latest = data.latest_observations?.['UNITED STATES']
         setPrediction((current) => ({
           ...current,
           destination: data.destinations?.[0] || current.destination,
-          season: data.seasons?.[0] || current.season,
-          volume_exported: latest?.volumen_exportado || current.volume_exported,
-          operations: latest?.operaciones || current.operations,
         }))
       })
       .catch(() => {})
@@ -102,17 +94,13 @@ export function SimulatorPage() {
     try {
       const payload = {
         ...form,
-        rendimiento_kg_ha: Number(form.rendimiento_kg_ha),
-        porcentaje_vendido: Number(form.porcentaje_vendido),
-        costo_produccion_usd_kg: Number(form.costo_produccion_usd_kg),
-        flete_usd_kg: Number(form.flete_usd_kg),
+        costo_soles_kg: Number(form.costo_soles_kg),
+        tipo_cambio: Number(form.tipo_cambio),
         hectares: Number(form.hectares),
         use_predicted_fob: usePredictedFob,
         destination: prediction.destination,
-        season: prediction.season,
         horizon: Number(prediction.horizon),
-        volume_exported: Number(prediction.volume_exported),
-        operations: Number(prediction.operations),
+        reference_date: prediction.reference_date || undefined,
       }
       if (!usePredictedFob) {
         payload.precio_fob_usd_kg = Number(form.precio_fob_usd_kg)
@@ -132,17 +120,13 @@ export function SimulatorPage() {
   const buildDeliveryPayload = () => {
     const payload = {
       ...form,
-      rendimiento_kg_ha: Number(form.rendimiento_kg_ha),
-      porcentaje_vendido: Number(form.porcentaje_vendido),
-      costo_produccion_usd_kg: Number(form.costo_produccion_usd_kg),
-      flete_usd_kg: Number(form.flete_usd_kg),
+      costo_soles_kg: Number(form.costo_soles_kg),
+      tipo_cambio: Number(form.tipo_cambio),
       hectares: Number(form.hectares),
       use_predicted_fob: usePredictedFob,
       destination: prediction.destination,
-      season: prediction.season,
       horizon: Number(prediction.horizon),
-      volume_exported: Number(prediction.volume_exported),
-      operations: Number(prediction.operations),
+      reference_date: prediction.reference_date || undefined,
     }
     if (!usePredictedFob) payload.precio_fob_usd_kg = Number(form.precio_fob_usd_kg)
     return payload
@@ -186,23 +170,20 @@ export function SimulatorPage() {
                     onChange={(e) => setUsePredictedFob(e.target.checked)}
                     className="h-4 w-4 rounded border-ag-green-200 accent-ag-green-600"
                   />
-                  Usar precio FOB proyectado (SARIMAX / SVR / LSTM)
+                  Usar precio FOB proyectado (Ridge / Random Forest / HistGradientBoosting)
                 </label>
                 {usePredictedFob ? (
                   <div className="mt-3 grid gap-3 sm:grid-cols-2">
                     <SelectField label="Destino exportación" value={prediction.destination} onChange={(v) => updatePrediction('destination', v)} options={predictOptions?.destinations} />
-                    <SelectField label="Temporada" value={prediction.season} onChange={(v) => updatePrediction('season', v)} options={predictOptions?.seasons} />
-                    <Field label="Horizonte (semanas)" value={prediction.horizon} onChange={(v) => updatePrediction('horizon', v)} type="number" />
-                    <Field label="Volumen exportado" value={prediction.volume_exported} onChange={(v) => updatePrediction('volume_exported', v)} type="number" />
+                    <SelectField label="Horizonte (semanas)" value={prediction.horizon} onChange={(v) => updatePrediction('horizon', v)} options={[4, 6, 8]} />
+                    <Field label="Fecha de referencia (opcional)" value={prediction.reference_date} onChange={(v) => updatePrediction('reference_date', v)} type="date" />
                   </div>
                 ) : (
                   <Field label="Precio FOB (US$/kg)" value={form.precio_fob_usd_kg} onChange={(v) => update('precio_fob_usd_kg', v)} type="number" />
                 )}
               </div>
-              <Field label="Rendimiento (kg/ha)" value={form.rendimiento_kg_ha} onChange={(v) => update('rendimiento_kg_ha', v)} type="number" />
-              <Field label="% vendido" value={form.porcentaje_vendido} onChange={(v) => update('porcentaje_vendido', v)} type="number" />
-              <Field label="Costo producción (US$/kg)" value={form.costo_produccion_usd_kg} onChange={(v) => update('costo_produccion_usd_kg', v)} type="number" />
-              <Field label="Flete (US$/kg)" value={form.flete_usd_kg} onChange={(v) => update('flete_usd_kg', v)} type="number" />
+              <Field label="Costo productivo (S//kg)" value={form.costo_soles_kg} onChange={(v) => update('costo_soles_kg', v)} type="number" />
+              <Field label="Tipo de cambio (S//US$)" value={form.tipo_cambio} onChange={(v) => update('tipo_cambio', v)} type="number" />
               <Field label="Hectáreas" value={form.hectares} onChange={(v) => update('hectares', v)} type="number" />
               <SelectField label="Región" value={form.region} onChange={(v) => update('region', v)} options={options?.regions} />
               <SelectField label="Provincia" value={form.provincia} onChange={(v) => update('provincia', v)} options={options?.provincias} />
@@ -235,14 +216,14 @@ export function SimulatorPage() {
                 <Metric label="Margen predicho (ML)" value={`S/ ${result.margen_predicho.toFixed(2)}`} sub="/kg" />
                 <Metric label="Ganancia estimada" value={`S/ ${Math.round(result.ganancia_total).toLocaleString('es-PE')}`} />
                 <Metric label="ROI" value={`${result.roi >= 0 ? '+' : ''}${result.roi.toFixed(1)}%`} accent={result.roi >= 0 ? 'green' : 'red'} />
-                <Metric label="Producción total" value={`${Math.round(result.produccion_total_kg).toLocaleString('es-PE')} kg`} />
+                <Metric label="Kilogramos vendibles estimados" value={`${Math.round(result.produccion_total_kg).toLocaleString('es-PE')} kg`} />
               </div>
 
               <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 text-sm">
                 <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Costos y punto de equilibrio</p>
                 <p className="mt-1 text-foreground">
-                  Costo prod. <span className="font-semibold">US$ {result.costo_produccion_usd_kg.toFixed(2)}/kg</span>
-                  {' · '}Flete <span className="font-semibold">US$ {result.flete_usd_kg.toFixed(2)}/kg</span>
+                  Costo productivo <span className="font-semibold">S/ {result.costo_soles_kg.toFixed(2)}/kg</span>
+                  {' · '}Tipo de cambio <span className="font-semibold">S/ {result.tipo_cambio.toFixed(2)}</span>
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   Punto de equilibrio: US$ {result.punto_equilibrio_usd_kg.toFixed(2)}/kg

@@ -32,34 +32,17 @@ import { PagePlaceholder } from '@/shared/components/PagePlaceholder'
 import { ShareResultsMenu } from '@/shared/components/ShareResultsMenu'
 import { predictionService } from '../services/predictionService'
 
-const MODEL_OPTIONS = [
-  { id: 'sarimax', label: 'SARIMAX', color: '#1D9E75' },
-  { id: 'svr', label: 'SVR', color: '#378ADD' },
-  { id: 'lstm', label: 'LSTM', color: '#EF9F27' },
-]
-
 const HORIZON_OPTIONS = [
   { value: 4, label: '4 sem.' },
   { value: 6, label: '6 sem.' },
   { value: 8, label: '8 sem.' },
-  { value: 12, label: '12 sem.' },
-  { value: 16, label: '16 sem.' },
-  { value: 24, label: '24 sem.' },
-  { value: 26, label: '6 meses' },
-  { value: 52, label: '1 año' },
 ]
 
 const HORIZON_LABELS = Object.fromEntries(HORIZON_OPTIONS.map((item) => [item.value, item.label]))
 const FALLBACK_DESTINATIONS = ['UNITED STATES', 'NETHERLANDS', 'SPAIN', 'CHINA', 'UNITED KINGDOM']
-const FALLBACK_SEASONS = ['Invierno', 'Otoño', 'Primavera', 'Verano']
-
 const DEFAULT_FORM = {
-  current_price: '',
-  volume_exported: 18500,
-  operations: 128,
   destination: 'UNITED STATES',
-  season: 'Invierno',
-  start_date: new Date().toISOString().slice(0, 10),
+  reference_date: '',
 }
 
 function formatMoney(value) {
@@ -85,19 +68,19 @@ function trendIcon(trend) {
 }
 
 function selectFinal(response) {
-  return response?.ensemble?.final_price ?? response?.models?.find((item) => item.status === 'ok')?.final_price ?? null
+  return response?.models?.find((item) => item.model === 'ridge' && item.status === 'ok')?.final_price
+    ?? response?.ensemble?.final_price
+    ?? response?.models?.find((item) => item.status === 'ok')?.final_price
+    ?? null
 }
 
 export function PredictionPage() {
   const [horizon, setHorizon] = useState(4)
-  const [selectedModels, setSelectedModels] = useState(MODEL_OPTIONS.map((item) => item.id))
   const [form, setForm] = useState(DEFAULT_FORM)
   const [modelStatus, setModelStatus] = useState([])
-  const [inputOptions, setInputOptions] = useState({ destinations: FALLBACK_DESTINATIONS, seasons: FALLBACK_SEASONS, ranges: {}, latest_observations: {} })
+  const [inputOptions, setInputOptions] = useState({ destinations: FALLBACK_DESTINATIONS, latest_observations: {} })
   const [result, setResult] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [statusLoading, setStatusLoading] = useState(true)
-  const [priceLoading, setPriceLoading] = useState(false)
   const [error, setError] = useState('')
 
   const selectedResult = useMemo(() => {
@@ -112,23 +95,17 @@ export function PredictionPage() {
   const modelMap = useMemo(() => new Map(modelStatus.map((item) => [item.model, item])), [modelStatus])
 
   const runPrediction = async (formPayload) => {
-    const payload = formPayload?.current_price === undefined ? form : formPayload
+    const payload = formPayload || form
 
     setLoading(true)
     setError('')
 
     try {
       const response = await predictionService.compare({
-        ...payload,
-        current_price: payload.current_price === '' ? undefined : Number(payload.current_price),
-        volume_exported: Number(payload.volume_exported),
-        operations: Number(payload.operations),
+        destination: payload.destination,
+        reference_date: payload.reference_date || undefined,
         horizon,
-        models: selectedModels,
       })
-      if (payload.current_price === '' && response.current_price) {
-        setForm((current) => ({ ...current, current_price: response.current_price }))
-      }
       setResult(response)
     } catch (err) {
       setError(err.message || 'No se pudo ejecutar la prediccion')
@@ -138,32 +115,9 @@ export function PredictionPage() {
   }
 
   const handleDestinationChange = async (destination) => {
-    setPriceLoading(true)
     setError('')
     setResult(null)
     setForm((current) => ({ ...current, destination }))
-
-    try {
-      const latest = await predictionService.getLatestObservation(destination)
-      setForm((current) => ({
-        ...current,
-        destination,
-        current_price: latest.precio,
-      }))
-    } catch (err) {
-      const cachedLatest = inputOptions.latest_observations?.[destination]
-      if (cachedLatest) {
-        setForm((current) => ({
-          ...current,
-          destination,
-          current_price: cachedLatest.precio,
-        }))
-      } else {
-        setError(err.message || 'No se pudo consultar el ultimo FOB historico')
-      }
-    } finally {
-      setPriceLoading(false)
-    }
   }
 
   useEffect(() => {
@@ -176,33 +130,12 @@ export function PredictionPage() {
         setModelStatus(modelsResponse)
         setInputOptions({
           destinations: optionsResponse.destinations?.length ? optionsResponse.destinations : FALLBACK_DESTINATIONS,
-          seasons: optionsResponse.seasons?.length ? optionsResponse.seasons : FALLBACK_SEASONS,
-          ranges: optionsResponse.ranges || {},
           latest_observations: optionsResponse.latest_observations || {},
         })
-
-        const latest = optionsResponse.latest_observations?.[DEFAULT_FORM.destination]
-        let nextForm
-
-        if (latest) {
-          nextForm = {
-            ...DEFAULT_FORM,
-            current_price: latest.precio,
-          }
-        } else {
-          nextForm = {
-            ...DEFAULT_FORM,
-            current_price: 2.91,
-          }
-        }
-
-        setForm(nextForm)
+        setForm(DEFAULT_FORM)
       })
       .catch((err) => {
         if (mounted) setError(err.message || 'No se pudo consultar el estado de los modelos')
-      })
-      .finally(() => {
-        if (mounted) setStatusLoading(false)
       })
 
     return () => {
@@ -210,40 +143,24 @@ export function PredictionPage() {
     }
   }, [])
 
-  const toggleModel = (model) => {
-    setSelectedModels((current) => {
-      if (current.includes(model) && current.length > 1) {
-        return current.filter((item) => item !== model)
-      }
-      if (!current.includes(model)) {
-        return [...current, model]
-      }
-      return current
-    })
-  }
-
   return (
     <PagePlaceholder
       id="Predicción"
       title="Modelo predictivo de precios FOB"
-      description="Comparacion de SARIMAX, SVR y LSTM para horizontes de semanas hasta 1 ano"
+      description="Comparación de Ridge, Random Forest y HistGradientBoosting para horizontes de 4, 6 y 8 semanas"
     >
       <div className="flex flex-col gap-4">
         <section className="grid gap-4 lg:grid-cols-[1fr_1.25fr]">
-          <PriceSummary result={selectedResult} currentPrice={Number(form.current_price)} horizon={horizon} loading={loading} />
+          <PriceSummary result={selectedResult} currentPrice={result?.current_price || 0} horizon={horizon} loading={loading} />
           <ControlPanel
             form={form}
             horizon={horizon}
-            selectedModels={selectedModels}
             modelMap={modelMap}
             inputOptions={inputOptions}
-            statusLoading={statusLoading}
-            priceLoading={priceLoading}
             loading={loading}
             onFormChange={setForm}
             onDestinationChange={handleDestinationChange}
             onHorizonChange={setHorizon}
-            onToggleModel={toggleModel}
             onRun={runPrediction}
           />
         </section>
@@ -255,7 +172,7 @@ export function PredictionPage() {
           </div>
         ) : null}
 
-        <ForecastChart result={result} currentPrice={Number(form.current_price)} />
+        <ForecastChart result={result} currentPrice={result?.current_price || 0} />
 
         {result?.historical_comparison ? (
           <HistoricalComparisonPanel comparison={result.historical_comparison} />
@@ -271,19 +188,16 @@ export function PredictionPage() {
           <ShareResultsMenu
             module="prediction"
             buildPayload={() => ({
-              ...form,
-              current_price: form.current_price === '' ? undefined : Number(form.current_price),
-              volume_exported: Number(form.volume_exported),
-              operations: Number(form.operations),
+              destination: form.destination,
+              reference_date: form.reference_date || undefined,
               horizon,
-              models: selectedModels,
             })}
           />
         ) : null}
 
         <section className="grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
           <ModelComparison result={result} modelMap={modelMap} />
-          <AnalysisPanel result={result} currentPrice={Number(form.current_price)} />
+          <AnalysisPanel result={result} currentPrice={result?.current_price || 0} />
         </section>
       </div>
     </PagePlaceholder>
@@ -340,25 +254,16 @@ function MetricTile({ label, value }) {
 function ControlPanel({
   form,
   horizon,
-  selectedModels,
-  modelMap,
   inputOptions,
-  statusLoading,
-  priceLoading,
   loading,
   onFormChange,
   onDestinationChange,
   onHorizonChange,
-  onToggleModel,
   onRun,
 }) {
   const updateField = (field, value) => {
     onFormChange((current) => ({ ...current, [field]: value }))
   }
-
-  const priceRange = inputOptions.ranges?.precio_fob_por_kilogramo || {}
-  const volumeRange = inputOptions.ranges?.volumen_exportado || {}
-  const operationsRange = inputOptions.ranges?.operaciones || {}
 
   return (
     <Card>
@@ -366,9 +271,9 @@ function ControlPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold text-foreground">Parametros predictivos</h2>
-            <p className="text-xs text-muted-foreground">FOB semanal de palta Hass, destino y actividad exportadora.</p>
+            <p className="text-xs text-muted-foreground">El histórico y las variables temporales se obtienen automáticamente.</p>
           </div>
-          <Button type="button" onClick={() => onRun()} disabled={loading || priceLoading || selectedModels.length === 0} size="sm">
+          <Button type="button" onClick={() => onRun()} disabled={loading} size="sm">
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
             Ejecutar
           </Button>
@@ -384,41 +289,9 @@ function ControlPanel({
               ))}
             </Select>
           </Field>
-          <Field label="FOB actual">
-            <div className="relative">
-              <Input
-                type="number"
-                min={priceRange.min}
-                max={priceRange.max}
-                step="0.01"
-                value={form.current_price}
-                onChange={(event) => updateField('current_price', Number(event.target.value))}
-                disabled={priceLoading}
-                className={priceLoading ? 'pr-9' : undefined}
-              />
-              {priceLoading ? <Loader2 className="absolute right-3 top-2.5 h-4 w-4 animate-spin text-muted-foreground" /> : null}
-            </div>
+          <Field label="Fecha de referencia (opcional)">
+            <Input type="date" value={form.reference_date} onChange={(event) => updateField('reference_date', event.target.value)} />
           </Field>
-          <Field label="Volumen exportado">
-            <Input type="number" min={volumeRange.min} max={volumeRange.max} value={form.volume_exported} onChange={(event) => updateField('volume_exported', Number(event.target.value))} />
-          </Field>
-          <Field label="Operaciones">
-            <Input type="number" min={operationsRange.min} max={operationsRange.max} value={form.operations} onChange={(event) => updateField('operations', Number(event.target.value))} />
-          </Field>
-
-          <Field label="Temporada">
-            <Select value={form.season} onChange={(event) => updateField('season', event.target.value)}>
-              {inputOptions.seasons.map((season) => (
-                <option key={season}>{season}</option>
-              ))}
-            </Select>
-          </Field>
-          <Field label="Semana inicial">
-            <Input type="date" value={form.start_date} onChange={(event) => updateField('start_date', event.target.value)} />
-          </Field>
-        </div>
-
-        <div className="grid gap-3 md:grid-cols-[0.85fr_1.15fr]">
           <div>
             <div className="mb-2 text-xs font-semibold text-foreground">Horizonte predictivo</div>
             <select
@@ -430,44 +303,9 @@ function ControlPanel({
                 <option key={item.value} value={item.value}>{item.label}</option>
               ))}
             </select>
-            <p className="mt-1.5 text-[11px] text-muted-foreground">Hasta 52 semanas (1 ano). Horizontes largos aumentan la incertidumbre.</p>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">Horizontes validados: 4, 6 y 8 semanas calendario.</p>
           </div>
 
-          <div>
-            <div className="mb-2 text-xs font-semibold text-foreground">Modelos</div>
-            <div className="grid gap-2 sm:grid-cols-3">
-              {MODEL_OPTIONS.map((model) => {
-                const status = modelMap.get(model.id)
-                const selected = selectedModels.includes(model.id)
-                return (
-                  <button
-                    key={model.id}
-                    type="button"
-                    onClick={() => onToggleModel(model.id)}
-                    className={cn(
-                      'flex h-16 items-center justify-between rounded-lg border px-3 text-left transition-colors',
-                      selected ? 'border-primary bg-ag-green-50 text-ag-green-800' : 'border-border bg-card text-foreground hover:bg-secondary'
-                    )}
-                  >
-                    <span>
-                      <span className="block text-sm font-semibold">{model.label}</span>
-                      <span className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
-                        {statusLoading ? (
-                          <Loader2 className="h-3 w-3 animate-spin" />
-                        ) : status?.available ? (
-                          <CheckCircle2 className="h-3 w-3 text-primary" />
-                        ) : (
-                          <AlertCircle className="h-3 w-3 text-ag-red-400" />
-                        )}
-                        {statusLoading ? 'Consultando' : status?.available ? 'Disponible' : 'Pendiente'}
-                      </span>
-                    </span>
-                    <span className={cn('h-3 w-3 rounded-full border', selected ? 'border-primary bg-primary' : 'border-input')} />
-                  </button>
-                )
-              })}
-            </div>
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -517,7 +355,20 @@ function ForecastChart({ result, currentPrice }) {
       type: 'Prediccion',
     }))
 
-    return [...history, ...forecast]
+    const chart = [...history, ...forecast]
+
+    if (history.length > 0 && forecast.length > 0) {
+      chart[history.length - 1] = {
+        ...chart[history.length - 1],
+        bridge: history[history.length - 1].historical,
+      }
+      chart[history.length] = {
+        ...chart[history.length],
+        bridge: forecast[0].forecast,
+      }
+    }
+
+    return chart
   }, [result])
 
   const values = chartData.flatMap((item) => [item.historical, item.forecast]).filter((value) => Number.isFinite(value))
@@ -562,6 +413,18 @@ function ForecastChart({ result, currentPrice }) {
                 connectNulls={false}
                 isAnimationActive
                 animationDuration={800}
+              />
+              <Line
+                type="monotone"
+                dataKey="bridge"
+                name="Transicion"
+                stroke="#7A7C73"
+                strokeWidth={2}
+                strokeDasharray="6 6"
+                dot={false}
+                activeDot={false}
+                connectNulls={false}
+                isAnimationActive={false}
               />
               <Line
                 type="monotone"
@@ -683,7 +546,7 @@ function ModelMetricsPanel({ modelStatus }) {
 
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {modelStatus.map((item) => {
-            const metrics = item.metadata?.metrics || {}
+            const metrics = item.metadata?.metrics || item.metadata || {}
             return (
               <div key={item.model} className="rounded-xl border border-border bg-secondary/40 px-4 py-3">
                 <p className="text-sm font-semibold text-foreground">{item.label}</p>
