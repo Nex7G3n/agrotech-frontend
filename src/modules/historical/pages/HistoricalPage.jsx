@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react'
 import { PagePlaceholder } from '@/shared/components/PagePlaceholder'
 import { ShareResultsMenu } from '@/shared/components/ShareResultsMenu'
 import { historicalService } from '../services/historicalService'
+import { profitabilityService } from '../../profitability/services/profitabilityService'
 import { Card, CardContent } from '@/components/ui/card'
 import { Loader2, Calendar, Globe, Award, ChevronUp, ChevronDown, Check, RotateCcw, AlertTriangle, HelpCircle, Map } from 'lucide-react'
 
@@ -76,6 +77,7 @@ export function HistoricalPage() {
     year: '2026',
     continent: 'Todos',
     destination: 'Todos',
+    campaignId: '',
   })
 
   // Raw master data from API
@@ -88,6 +90,7 @@ export function HistoricalPage() {
   const [compareMode, setCompareMode] = useState('years')
   const [selectedCountries, setSelectedCountries] = useState(['UNITED STATES', 'NETHERLANDS', 'SPAIN'])
 
+  const [campaigns, setCampaigns] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -135,18 +138,18 @@ export function HistoricalPage() {
   const CHART_COLORS = [
     '#0F6E56', // Verde esmeralda oscuro
     '#5DCAA5', // Verde menta claro
-    '#BA7517', // Oro/Ámbar
+    '#F97316', // Naranja vibrante
     '#E24B4A', // Rojo
     '#378ADD', // Azul
     '#8B5CF6', // Púrpura
     '#EC4899', // Rosa
-    '#F59E0B', // Naranja
+    '#F59E0B', // Amarillo/Naranja
   ]
 
   // Tooltip state for custom SVG chart
   const [hoveredBar, setHoveredBar] = useState(null)
 
-  // Fetch filters on mount
+  // Fetch filters and campaigns on mount
   useEffect(() => {
     historicalService.getFilters()
       .then((res) => {
@@ -169,6 +172,16 @@ export function HistoricalPage() {
       })
       .catch((err) => {
         console.error('Error fetching filters:', err)
+      })
+
+    profitabilityService.listCampaigns()
+      .then((res) => {
+        if (res) {
+          setCampaigns(res)
+        }
+      })
+      .catch((err) => {
+        console.error('Error fetching campaigns:', err)
       })
   }, [])
 
@@ -264,11 +277,12 @@ export function HistoricalPage() {
     const yearNum = parseInt(currentFilters.year, 10) || 2024
     const dest = currentFilters.destination === 'Todos' ? null : currentFilters.destination
     const continent = currentFilters.continent === 'Todos' ? null : currentFilters.continent
+    const campId = currentFilters.campaignId ? Number(currentFilters.campaignId) : null
 
     Promise.all([
-      historicalService.getSummary(yearNum, dest, continent),
-      historicalService.getChartData(yearNum, dest, continent),
-      historicalService.getComparison(dest, continent),
+      historicalService.getSummary(yearNum, dest, continent, campId),
+      historicalService.getChartData(yearNum, dest, continent, campId),
+      historicalService.getComparison(dest, continent, campId),
     ])
       .then(([summaryRes, chartRes, comparisonRes]) => {
         if (summaryRes) setSummaryData(summaryRes)
@@ -286,11 +300,21 @@ export function HistoricalPage() {
   // Initial fetch when filters are populated or changed
   useEffect(() => {
     fetchData(filters)
-  }, [filters.year, filters.continent, filters.destination])
+  }, [filters.year, filters.continent, filters.destination, filters.campaignId])
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => {
       const nextFilters = { ...prev, [key]: value }
+      if (key === 'campaignId') {
+        if (value) {
+          const selectedCamp = campaigns.find(c => String(c.id) === String(value))
+          if (selectedCamp && selectedCamp.start_date) {
+            nextFilters.year = selectedCamp.start_date.substring(0, 4)
+          }
+          nextFilters.continent = 'Todos'
+          nextFilters.destination = 'Todos'
+        }
+      }
       if (key === 'continent') {
         nextFilters.destination = 'Todos'
       }
@@ -303,6 +327,7 @@ export function HistoricalPage() {
       year: allYears.includes(2026) ? '2026' : String(allYears[0] || '2026'),
       continent: 'Todos',
       destination: 'Todos',
+      campaignId: '',
     }
     setFilters(defaultFilters)
     fetchData(defaultFilters)
@@ -361,13 +386,31 @@ export function HistoricalPage() {
     >
       {/* Filters Area */}
       <div className="flex flex-wrap items-center gap-3 bg-card border border-border p-4 rounded-xl shadow-xs">
-        {/* Year Select */}
+        {/* Campaign Select */}
         <div className="flex items-center gap-2 bg-card border border-border hover:border-ag-green-200 rounded-full px-4 py-2 text-sm text-foreground transition-colors shadow-xs">
+          <Map className="h-4 w-4 text-muted-foreground" />
+          <select
+            value={filters.campaignId}
+            onChange={(e) => handleFilterChange('campaignId', e.target.value)}
+            className="bg-transparent border-none outline-none font-medium focus:ring-0 cursor-pointer text-foreground"
+          >
+            <option value="" className="text-foreground bg-card">Todas las campañas (Filtro rápido)</option>
+            {campaigns.map((c) => (
+              <option key={c.id} value={c.id} className="text-foreground bg-card">
+                {c.name} ({c.region})
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Year Select */}
+        <div className={`flex items-center gap-2 bg-card border border-border hover:border-ag-green-200 rounded-full px-4 py-2 text-sm text-foreground transition-colors shadow-xs ${filters.campaignId ? 'opacity-50 cursor-not-allowed' : ''}`}>
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <select
             value={filters.year}
             onChange={(e) => handleFilterChange('year', e.target.value)}
-            className="bg-transparent border-none outline-none font-medium focus:ring-0 cursor-pointer text-foreground"
+            disabled={!!filters.campaignId}
+            className="bg-transparent border-none outline-none font-medium focus:ring-0 cursor-pointer text-foreground disabled:cursor-not-allowed"
           >
             {computedYears.map((y) => (
               <option key={y} value={y} className="text-foreground bg-card">
@@ -378,12 +421,13 @@ export function HistoricalPage() {
         </div>
 
         {/* Continent Select */}
-        <div className="flex items-center gap-2 bg-card border border-border hover:border-ag-green-200 rounded-full px-4 py-2 text-sm text-foreground transition-colors shadow-xs">
+        <div className={`flex items-center gap-2 bg-card border border-border hover:border-ag-green-200 rounded-full px-4 py-2 text-sm text-foreground transition-colors shadow-xs ${filters.campaignId ? 'opacity-50 cursor-not-allowed' : ''}`}>
           <Map className="h-4 w-4 text-muted-foreground" />
           <select
             value={filters.continent}
             onChange={(e) => handleFilterChange('continent', e.target.value)}
-            className="bg-transparent border-none outline-none font-medium focus:ring-0 cursor-pointer text-foreground"
+            disabled={!!filters.campaignId}
+            className="bg-transparent border-none outline-none font-medium focus:ring-0 cursor-pointer text-foreground disabled:cursor-not-allowed"
           >
             <option value="Todos" className="text-foreground bg-card">Todos los continentes</option>
             {availableContinents.map((c) => (
@@ -395,12 +439,13 @@ export function HistoricalPage() {
         </div>
 
         {/* Destination (Country) Select */}
-        <div className="flex items-center gap-2 bg-card border border-border hover:border-ag-green-200 rounded-full px-4 py-2 text-sm text-foreground transition-colors shadow-xs max-w-[280px]">
+        <div className={`flex items-center gap-2 bg-card border border-border hover:border-ag-green-200 rounded-full px-4 py-2 text-sm text-foreground transition-colors shadow-xs max-w-[280px] ${filters.campaignId ? 'opacity-50 cursor-not-allowed' : ''}`}>
           <Globe className="h-4 w-4 text-muted-foreground" />
           <select
             value={filters.destination}
             onChange={(e) => handleFilterChange('destination', e.target.value)}
-            className="bg-transparent border-none outline-none font-medium focus:ring-0 truncate cursor-pointer text-foreground w-full"
+            disabled={!!filters.campaignId}
+            className="bg-transparent border-none outline-none font-medium focus:ring-0 truncate cursor-pointer text-foreground w-full disabled:cursor-not-allowed"
           >
             <option value="Todos" className="text-foreground bg-card">Todos los países</option>
             {computedDestinations.map((dest) => (
@@ -549,7 +594,7 @@ export function HistoricalPage() {
                     const svgHeight = 280;
                     const paddingLeft = 70;
                     const paddingRight = 30;
-                    const paddingTop = 20;
+                    const paddingTop = 35;
                     const paddingBottom = 40;
                     const chartWidth = svgWidth - paddingLeft - paddingRight;
                     const chartHeight = svgHeight - paddingTop - paddingBottom;
@@ -654,16 +699,25 @@ export function HistoricalPage() {
                                   if (p.price === 0) return null;
                                   const isHovered = hoveredBar === pIdx;
                                   return (
-                                    <circle
-                                      key={pIdx}
-                                      cx={p.x}
-                                      cy={p.y}
-                                      r={isHovered ? 6 : 4}
-                                      fill={color}
-                                      stroke="#ffffff"
-                                      strokeWidth={isHovered ? 2.5 : 1.5}
-                                      className="transition-all duration-200 cursor-pointer shadow-sm"
-                                    />
+                                    <g key={pIdx}>
+                                      <circle
+                                        cx={p.x}
+                                        cy={p.y}
+                                        r={isHovered ? 6 : 4}
+                                        fill={color}
+                                        stroke="#ffffff"
+                                        strokeWidth={isHovered ? 2.5 : 1.5}
+                                        className="transition-all duration-200 cursor-pointer shadow-sm"
+                                      />
+                                      <text
+                                        x={p.x}
+                                        y={p.y - 8}
+                                        textAnchor="middle"
+                                        className="fill-foreground text-[8px] font-bold font-mono"
+                                      >
+                                        ${p.price.toFixed(2)}
+                                      </text>
+                                    </g>
                                   );
                                 })}
                               </g>

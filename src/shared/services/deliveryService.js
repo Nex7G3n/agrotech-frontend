@@ -49,6 +49,22 @@ export const deliveryService = {
       chat_id: chatId || undefined,
     }),
 
+  sendEmail: (module, payload, emailDestination) =>
+    httpClient.post('/delivery/share', {
+      module,
+      channel: 'email',
+      payload,
+      email_destination: emailDestination || undefined,
+    }),
+
+  sendWhatsApp: (module, payload, phoneDestination) =>
+    httpClient.post('/delivery/share', {
+      module,
+      channel: 'whatsapp',
+      payload,
+      phone_destination: phoneDestination || undefined,
+    }),
+
   shareBoth: (module, payload, chatId) =>
     httpClient.post('/delivery/share', {
       module,

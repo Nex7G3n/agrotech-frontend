@@ -6,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ShareResultsMenu } from '@/shared/components/ShareResultsMenu'
 import { historicalService } from '@/modules/historical/services/historicalService'
 import { reportsService } from '@/modules/reports/services/reportsService'
+import { profitabilityService } from '@/modules/profitability/services/profitabilityService'
 
 const TONE_DOT = { green: 'bg-ag-green-500', amber: 'bg-amber-400', red: 'bg-red-500' }
 const TONE_BAR = { green: 'bg-ag-green-500', amber: 'bg-amber-400', red: 'bg-red-400' }
@@ -28,7 +29,8 @@ const VS_TONE = (label) => {
 
 export function ReportsPage() {
   const [filterOptions, setFilterOptions] = useState(null)
-  const [filters, setFilters] = useState({ yearFrom: '', yearTo: '', continent: 'Todos', destination: 'Todos' })
+  const [filters, setFilters] = useState({ yearFrom: '', yearTo: '', continent: 'Todos', destination: 'Todos', campaignId: '' })
+  const [campaigns, setCampaigns] = useState([])
   const [report, setReport] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -46,6 +48,13 @@ export function ReportsPage() {
         }))
       })
       .catch((err) => setError(err.message))
+
+    profitabilityService
+      .listCampaigns()
+      .then((data) => {
+        setCampaigns(data || [])
+      })
+      .catch((err) => console.error('Error loading campaigns:', err))
   }, [])
 
   const destinationsForContinent = useMemo(() => {
@@ -63,6 +72,7 @@ export function ReportsPage() {
         yearTo: filters.yearTo,
         destination: filters.destination,
         continent: filters.continent,
+        campaignId: filters.campaignId,
       }))
     } catch (err) {
       setError(err.message)
@@ -74,12 +84,29 @@ export function ReportsPage() {
 
   useEffect(() => {
     if (filters.yearFrom && filters.yearTo) loadReport()
-  }, [filters.yearFrom, filters.yearTo, filters.destination, filters.continent, loadReport])
+  }, [filters.yearFrom, filters.yearTo, filters.destination, filters.continent, filters.campaignId, loadReport])
 
   const updateFilter = (key, value) => {
     setFilters((c) => {
       const next = { ...c, [key]: value }
-      if (key === 'continent') next.destination = 'Todos'
+      if (key === 'campaignId') {
+        if (value) {
+          const selectedCamp = campaigns.find(camp => String(camp.id) === String(value))
+          if (selectedCamp) {
+            if (selectedCamp.start_date) {
+              next.yearFrom = selectedCamp.start_date.substring(0, 4)
+            }
+            if (selectedCamp.end_date) {
+              next.yearTo = selectedCamp.end_date.substring(0, 4)
+            }
+            next.continent = 'Todos'
+            next.destination = 'Todos'
+          }
+        }
+      }
+      if (key === 'continent') {
+        next.destination = 'Todos'
+      }
       return next
     })
   }
@@ -116,25 +143,31 @@ export function ReportsPage() {
       {/* Filtros */}
       <Card>
         <CardContent className="gap-4 p-5">
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
+            <FilterField label="Campaña">
+              <select className="h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm" value={filters.campaignId} onChange={(e) => updateFilter('campaignId', e.target.value)}>
+                <option value="">Todas las campañas (Filtro rápido)</option>
+                {campaigns.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.region})</option>)}
+              </select>
+            </FilterField>
             <FilterField label="Año desde">
-              <select className="h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm" value={filters.yearFrom} onChange={(e) => updateFilter('yearFrom', e.target.value)}>
+              <select className="h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" value={filters.yearFrom} onChange={(e) => updateFilter('yearFrom', e.target.value)} disabled={!!filters.campaignId}>
                 {(filterOptions?.years || []).map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
             </FilterField>
             <FilterField label="Año hasta">
-              <select className="h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm" value={filters.yearTo} onChange={(e) => updateFilter('yearTo', e.target.value)}>
+              <select className="h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" value={filters.yearTo} onChange={(e) => updateFilter('yearTo', e.target.value)} disabled={!!filters.campaignId}>
                 {(filterOptions?.years || []).map((y) => <option key={y} value={y}>{y}</option>)}
               </select>
             </FilterField>
             <FilterField label="Continente">
-              <select className="h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm" value={filters.continent} onChange={(e) => updateFilter('continent', e.target.value)}>
+              <select className="h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" value={filters.continent} onChange={(e) => updateFilter('continent', e.target.value)} disabled={!!filters.campaignId}>
                 <option value="Todos">Todos</option>
                 {(filterOptions?.continents || []).map((c) => <option key={c} value={c}>{c}</option>)}
               </select>
             </FilterField>
             <FilterField label="Mercado">
-              <select className="h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm" value={filters.destination} onChange={(e) => updateFilter('destination', e.target.value)}>
+              <select className="h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm disabled:opacity-50 disabled:cursor-not-allowed" value={filters.destination} onChange={(e) => updateFilter('destination', e.target.value)} disabled={!!filters.campaignId}>
                 <option value="Todos">Todos</option>
                 {destinationsForContinent.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
               </select>

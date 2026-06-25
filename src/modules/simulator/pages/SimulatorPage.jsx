@@ -57,6 +57,8 @@ export function SimulatorPage() {
   const [options, setOptions] = useState(null)
   const [predictOptions, setPredictOptions] = useState(null)
   const [models, setModels] = useState([])
+  const [campaigns, setCampaigns] = useState([])
+  const [selectedCampaign, setSelectedCampaign] = useState('')
   const [form, setForm] = useState(INITIAL_FORM)
   const [prediction, setPrediction] = useState(PREDICTION_DEFAULTS)
   const [usePredictedFob, setUsePredictedFob] = useState(true)
@@ -83,7 +85,28 @@ export function SimulatorPage() {
         }))
       })
       .catch(() => {})
+    profitabilityService
+      .listCampaigns()
+      .then((data) => {
+        setCampaigns(data)
+        if (data.length) setSelectedCampaign(String(data[0].id))
+      })
+      .catch((err) => setError(err.message))
   }, [])
+
+  useEffect(() => {
+    if (selectedCampaign && campaigns.length) {
+      const campaign = campaigns.find((c) => String(c.id) === selectedCampaign)
+      if (campaign) {
+        setForm((current) => ({
+          ...current,
+          region: campaign.region || current.region,
+          provincia: campaign.district && campaign.district !== 'No reportado' ? campaign.district : current.provincia,
+          hectares: campaign.area_ha || current.hectares,
+        }))
+      }
+    }
+  }, [selectedCampaign, campaigns])
 
   const update = (key, value) => setForm((current) => ({ ...current, [key]: value }))
   const updatePrediction = (key, value) => setPrediction((current) => ({ ...current, [key]: value }))
@@ -111,6 +134,28 @@ export function SimulatorPage() {
       }
       const data = await profitabilityService.calculateWithPrediction(payload)
       setResult(data)
+
+      if (selectedCampaign) {
+        const existingSims = await profitabilityService.listSimulations(selectedCampaign)
+        const duplicate = existingSims.find((s) => s.name === 'Cálculo Rentabilidad')
+        if (duplicate) {
+          await profitabilityService.deleteSimulation(duplicate.id)
+        }
+        const simPayload = {
+          name: 'Cálculo Rentabilidad',
+          precio_fob_usd_kg: data.precio_fob_usado,
+          costo_soles_kg: Number(form.costo_soles_kg),
+          tipo_cambio: Number(form.tipo_cambio),
+          region: form.region,
+          provincia: form.provincia,
+          tipo_conduccion_cultivo: form.tipo_conduccion_cultivo,
+          sequia: form.sequia,
+          plagas_enfermedades: form.plagas_enfermedades,
+          hectares: Number(form.hectares),
+          margen_objetivo_soles: 0,
+        }
+        await profitabilityService.createSimulation(selectedCampaign, simPayload)
+      }
     } catch (err) {
       setError(err.message)
       setResult(null)
@@ -147,6 +192,29 @@ export function SimulatorPage() {
             : 'Recomendación por reglas — agrega GEMINI_API_KEY en agrotech-backend/.env'}
         </span>
       </div>
+
+      <Card>
+        <CardContent className="gap-4 p-5">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div className="space-y-1.5 lg:max-w-md w-full">
+              <label className="text-xs font-medium text-muted-foreground">Campaña a la que se asociará el cálculo</label>
+              <select
+                className="h-9 w-full rounded-(--radius) border border-input bg-secondary px-3 py-2 text-sm"
+                value={selectedCampaign}
+                onChange={(event) => setSelectedCampaign(event.target.value)}
+              >
+                {campaigns.length === 0 ? <option value="">No hay campañas — crea una en el módulo Campañas</option> : null}
+                {campaigns.map((campaign) => (
+                  <option key={campaign.id} value={campaign.id}>{campaign.name} · {campaign.region} / {campaign.district}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Selecciona una campaña para precargar los datos de región/provincia/hectáreas y guardar de forma persistente este cálculo para su comparación.
+          </p>
+        </CardContent>
+      </Card>
 
       {error ? (
         <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600">

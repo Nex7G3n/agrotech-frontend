@@ -3,12 +3,13 @@ import { notifyUnauthorized } from '@/shared/api/authSession'
 
 import { API_URL } from '@/shared/api/apiConfig'
 
-function buildCyclesQuery({ yearFrom, yearTo, destination, continent } = {}) {
+function buildCyclesQuery({ yearFrom, yearTo, destination, continent, campaignId } = {}) {
   const params = new URLSearchParams()
   if (yearFrom) params.append('year_from', yearFrom)
   if (yearTo) params.append('year_to', yearTo)
   if (destination && destination !== 'Todos') params.append('destination', destination)
   if (continent && continent !== 'Todos') params.append('continent', continent)
+  if (campaignId) params.append('campaign_id', campaignId)
   return params.toString()
 }
 
