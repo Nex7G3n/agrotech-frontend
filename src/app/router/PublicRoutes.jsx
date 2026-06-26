@@ -1,8 +1,13 @@
 import { authRoutes } from '../../modules/auth/routes'
+import { HomeRedirect, PublicOnlyRoute } from './RouteGuards'
 
-const homeRoute = {
-  path: '/',
-  element: <div style={{ padding: '2rem' }}>Redirige a login o landing pública</div>,
-}
-
-export const publicRoutes = [homeRoute, ...authRoutes]
+export const publicRoutes = [
+  {
+    path: '/',
+    element: <HomeRedirect />,
+  },
+  {
+    element: <PublicOnlyRoute />,
+    children: authRoutes,
+  },
+]

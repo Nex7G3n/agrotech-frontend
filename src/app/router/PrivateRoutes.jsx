@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom'
 import { ProtectedRoute } from './ProtectedRoute'
 import { dashboardRoutes } from '../../modules/dashboard/routes'
 import { adminRoutes } from '../../modules/admin/routes'
@@ -23,12 +24,16 @@ export const privateRoutes = [
           ...simulatorRoutes,
           ...reportsRoutes,
           ...alertsRoutes,
+          {
+            path: '*',
+            element: <Navigate to="/dashboard" replace />,
+          },
         ],
       },
     ],
   },
   {
-    element: <ProtectedRoute />,
+    element: <ProtectedRoute allowedRoles={['admin']} />,
     children: [
       {
         element: <AppShell />,
